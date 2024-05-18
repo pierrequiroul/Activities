@@ -1,0 +1,60 @@
+{
+	"$schema": "https://schemas.premid.app/metadata/1.10",
+	"author": {
+		"id": "87107972676751360",
+		"name": "pierrequlroule"
+	},
+	"service": "RTBF Auvio",
+	"description": {
+		"en": "Watch and listen to replay of all RTBF programs. Watch or listen live to your TV and radio channels. Discover exclusive content."
+	},
+	"url": "auvio.rtbf.be",
+	"version": "1.0.0",
+	"logo": "https://i.imgur.com/m2gRowq.png",
+	"thumbnail": "https://i.imgur.com/RCC855X.png",
+	"color": "#cba10a",
+	"category": "videos",
+	"tags": [
+		"rtbf",
+		"classic21",
+		"premiere",
+		"vivacite",
+		"tipik",
+		"musiq3",
+		"tarmac",
+		"jam",
+		"streaming",
+		"une",
+		"trois",
+		"tipikvision",
+		"euronews",
+		"tv5monde",
+		"arte",
+		"belgium",
+		"media",
+		"streaming"
+	],
+	"settings": [
+		{
+			"id": "privacy",
+			"title": "Privacy Mode",
+			"icon": "fad fa-user-secret",
+			"value": false
+		},
+		{
+			"id": "time",
+			"title": "Show Timestamps",
+			"icon": "fad fa-stopwatch",
+			"value": true
+		},
+		{
+			"id": "buttons",
+			"if": {
+				"privacy": false
+			},
+			"title": "Show Buttons",
+			"icon": "fas fa-compress-arrows-alt",
+			"value": true
+		}
+	]
+}
