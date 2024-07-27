@@ -1,34 +1,41 @@
 const presence = new Presence({
 		clientId: "1241444837476274268",
 	}),
-	strings = presence.getStrings({
-		play: "general.playing",
-		pause: "general.paused",
-		search: "general.search",
-		searchSomething: "general.searchSomething",
-		browsing: "general.browsing",
-		viewing: "general.viewing",
-		viewPage: "general.viewPage",
-		viewAPage: "general.viewAPage",
-		viewAccount: "general.viewAccount",
-		viewChannel: "general.viewChannel",
-		viewCategory: "general.viewCategory",
-		viewList: "netflix.viewList",
-		viewSerie: "general.viewSerie",
-		viewShow: "general.viewShow",
-		viewMovie: "general.viewMovie",
-		buttonViewPage: "general.buttonViewPage",
-		watching: "general.watching",
-		watchingAd: "youtube.ad",
-		watchingLive: "general.watchingLive",
-		watchingShow: "general.watchingShow",
-		buttonWatchStream: "general.buttonWatchStream",
-		buttonWatchVideo: "general.buttonWatchVideo",
-		live: "general.live",
-		waitingLive: "general.waitingLive",
-		waitingLiveThe: "general.waitingLiveThe",
-	}),
-	browsingTimestamp = Math.floor(Date.now() / 1000);
+	browsingTimestamp = Math.floor(Date.now() / 1000),
+	getStrings = async () => {
+		return presence.getStrings(
+			{
+				play: "general.playing",
+			pause: "general.paused",
+			search: "general.search",
+			searchSomething: "general.searchSomething",
+			browsing: "general.browsing",
+			viewing: "general.viewing",
+			viewPage: "general.viewPage",
+			viewAPage: "general.viewAPage",
+			viewAccount: "general.viewAccount",
+			viewChannel: "general.viewChannel",
+			viewCategory: "general.viewCategory",
+			viewList: "netflix.viewList",
+			viewSerie: "general.viewSerie",
+			viewShow: "general.viewShow",
+			viewMovie: "general.viewMovie",
+			buttonViewPage: "general.buttonViewPage",
+			watching: "general.watching",
+			watchingAd: "youtube.ad",
+			watchingLive: "general.watchingLive",
+			watchingShow: "general.watchingShow",
+			buttonWatchStream: "general.buttonWatchStream",
+			buttonWatchVideo: "general.buttonWatchVideo",
+			live: "general.live",
+			waitingLive: "general.waitingLive",
+			waitingLiveThe: "general.waitingLiveThe",
+			},
+			await presence.getSetting<string>("lang").catch(() => "en")
+		);
+	};
+let oldLang: string = null,
+	strings: Awaited<ReturnType<typeof getStrings>>;
 
 /*let currentTitle: string,
 	liveStatus: string,
@@ -73,181 +80,206 @@ const enum Assets { // Other default assets can be found at index.d.ts
 function getChannel(channel: string) {
 	channel = channel.toLowerCase();
 	switch (true) {
-		case channel.includes("la une"): {
+		case ["la une","laune"].includes(channel): {
 			return {
 				channel: "La Une",
-				type: "tv",
+				type: ActivityType.Watching,
 				logo: Assets.LaUne,
 			};
 		}
-		case channel.includes("tipik"): {
+		case ["tipik"].includes(channel): {
 			return {
 				channel: "Tipik",
-				type: "tv",
+				type: ActivityType.Watching,
 				logo: Assets.Tipik,
 			};
 		}
-		case channel.includes("la trois"): {
+		case ["la trois","latrois"].includes(channel): {
 			return {
 				channel: "La Trois",
-				type: "tv",
+				type: ActivityType.Watching,
 				logo: Assets.LaTrois,
 			};
 		}
-		case channel.includes("classic 21"): {
+		case ["classic 21","classic21"].includes(channel): {
 			return {
 				channel: "Classic 21",
-				type: "radio",
+				type: ActivityType.Listening,
 				logo: Assets.Classic21,
 			};
 		}
-		case channel.includes("la premiere") || channel.includes("la première"): {
+		case ["la premiere","la première","lapremiere"].includes(channel): {
 			return {
 				channel: "La Première",
-				type: "radio",
+				type: ActivityType.Listening,
 				logo: Assets.LaPremiere,
 			};
 		}
-		case channel.includes("vivacite") || channel.includes("vivacité"): {
+		case ["vivacite","vivacité"].includes(channel): {
 			return {
 				channel: "Vivacité",
-				type: "radio",
+				type: ActivityType.Listening,
 				logo: Assets.Vivacite,
 			};
 		}
-		case channel.includes("musiq3"): {
+		case ["musiq3"].includes(channel): {
 			return {
 				channel: "Musiq3",
-				type: "radio",
+				type: ActivityType.Listening,
 				logo: Assets.Musiq3,
 			};
 		}
-		case channel.includes("tarmac"): {
+		case ["tarmac"].includes(channel): {
 			return {
 				channel: "Tarmac",
-				type: "radio",
+				type: ActivityType.Listening,
 				logo: Assets.Tarmac,
 			};
 		}
-		case channel.includes("jam"): {
+		case ["jam"].includes(channel): {
 			return {
 				channel: "Jam",
-				type: "radio",
+				type: ActivityType.Listening,
 				logo: Assets.Jam,
 			};
 		}
-		case channel.includes("viva"): {
+		case ["viva"].includes(channel): {
 			return {
 				channel: "Viva+",
-				type: "radio",
+				type: ActivityType.Listening,
 				logo: Assets.Viva,
 			};
 		}
-		case channel.includes("ixpe") || channel.includes("ixpé"): {
+		case ["ixpe"].includes(channel): {
 			return {
 				channel: "Ixpé",
-				type: "tv",
+				type: ActivityType.Watching,
 				logo: Assets.Ixpe,
 			};
 		}
-		case channel.includes("medias de proximite") ||
-			channel.includes("médias de proximité"): {
+		case ["medias de proximite","médias de proximité"].includes(channel): {
 			return {
 				channel: "Médias de proximité",
-				type: "tv",
+				type: ActivityType.Watching,
 				logo: Assets.MediasProx,
 			};
 		}
-		case channel.includes("ab3"): {
+		case ["ab3"].includes(channel): {
 			return {
 				channel: "AB3",
-				type: "tv",
+				type: ActivityType.Watching,
 				logo: Assets.AB3,
 			};
 		}
-		case channel.includes("abxplore"): {
+		case ["abxplore"].includes(channel): {
 			return {
 				channel: "ABXPLORE",
-				type: "tv",
+				type: ActivityType.Watching,
 				logo: Assets.ABXPLORE,
 			};
 		}
-		case channel.includes("ln24"): {
+		case ["ln24"].includes(channel): {
 			return {
 				channel: "LN24",
-				type: "tv",
+				type: ActivityType.Watching,
 				logo: Assets.LN24,
 			};
 		}
-		case channel.includes("nrj"): {
+		case ["nrj"].includes(channel): {
 			return {
 				channel: "NRJ",
-				type: "tv",
+				type: ActivityType.Watching,
 				logo: Assets.NRJ,
 			};
 		}
-		case channel.includes("arte"): {
+		case ["arte"].includes(channel): {
 			return {
 				channel: "Arte",
-				type: "tv",
+				type: ActivityType.Watching,
 				logo: Assets.Arte,
 			};
 		}
-		case channel.includes("bruzz"): {
+		case ["bruzz"].includes(channel): {
 			return {
 				channel: "BRUZZ",
-				type: "tv",
+				type: ActivityType.Watching,
 				logo: Assets.BRUZZ,
 			};
 		}
-		case channel.includes("brf"): {
+		case ["brf"].includes(channel): {
 			return {
 				channel: "BRF",
-				type: "tv",
+				type: ActivityType.Watching,
 				logo: Assets.BRF,
 			};
 		}
-		case channel.includes("kids"): {
+		case ["kids"].includes(channel): {
 			return {
-				channel: "Auvio Kids",
-				type: "tv",
+				channel: "RTBF Auvio",
+				type: ActivityType.Watching,
 				logo: Assets.Kids,
 			};
 		}
 		default: {
 			return {
-				channel: "",
-				type: "watching",
+				channel: "RTBF Auvio",
+				type: ActivityType.Watching,
 				logo: Assets.Auvio,
 			};
 		}
 	}
 }
 
+const shortenedURLs: Record<string, string> = {};
+async function getShortURL(url: string) {
+	if (!url || url.length < 256) return url;
+	if (shortenedURLs[url]) return shortenedURLs[url];
+	try {
+		const pdURL = await (
+			await fetch(`https://pd.premid.app/create/${url}`)
+		).text();
+		shortenedURLs[url] = pdURL;
+		return pdURL;
+	} catch (err) {
+		presence.error(err);
+		return url;
+	}
+}
+
+/*
 function exist(selector: string) {
 	return document.querySelector(selector) !== null;
-}
+}*/
 
 presence.on("UpdateData", async () => {
 	const presenceData: PresenceData = {
-			largeImageKey: Assets.Logo, // Default
+			name: "Auvio",
+			largeImageKey: Assets.Auvio, // Default
+			largeImageText: "RTBF Auvio",
+			type: ActivityType.Watching,
 		},
 		{ /*hostname,*//* href,*/ pathname } = document.location,
-		[privacy, time, buttons] = await Promise.all([
+		[lang, privacy, time, buttons] = await Promise.all([
+			presence.getSetting<string>("lang").catch(() => "en"),
 			presence.getSetting<boolean>("privacy"),
 			presence.getSetting<boolean>("time"),
 			presence.getSetting<number>("buttons"),
 		]);
+
+	if (oldLang !== lang || !strings) {
+		oldLang = lang;
+		strings = await getStrings();
+	}
 
 	switch (true) {
 		/* MAIN PAGE (Page principale)
 
 	(https://auvio.rtbf.be/) */
 		case pathname === "/": {
-			presenceData.details = (await strings).browsing;
+			presenceData.details = strings.browsing;
 
 			presenceData.smallImageKey = Assets.Reading;
-			presenceData.smallImageText = (await strings).browsing;
+			presenceData.smallImageText = strings.browsing;
 
 			if (time) presenceData.startTimestamp = browsingTimestamp;
 
@@ -258,10 +290,10 @@ presence.on("UpdateData", async () => {
 
 	(https://auvio.rtbf.be/explorer) */
 		case ["explorer"].includes(pathname.split("/")[1]): {
-			presenceData.details = (await strings).searchSomething;
+			presenceData.details = strings.searchSomething;
 
 			presenceData.smallImageKey = Assets.Search;
-			presenceData.smallImageText = (await strings).search;
+			presenceData.smallImageText = strings.search;
 
 			if (time) presenceData.startTimestamp = browsingTimestamp;
 
@@ -280,11 +312,11 @@ presence.on("UpdateData", async () => {
 			"parametres_lecture",
 		].includes(pathname.split("/")[1]): {
 			presenceData.details = privacy
-				? (await strings).viewAPage
-				: (await strings).viewAccount;
+				? strings.viewAPage
+				: strings.viewAccount;
 
 			presenceData.smallImageKey = Assets.Reading;
-			presenceData.smallImageText = (await strings).browsing;
+			presenceData.smallImageText = strings.browsing;
 
 			if (time) presenceData.startTimestamp = browsingTimestamp;
 
@@ -293,82 +325,78 @@ presence.on("UpdateData", async () => {
 		case [
 			"media",
 			"live",
-			"emission"
+			"emission",
 		].includes(pathname.split("/")[1]): {
-			console.log("Movie page");
-			// Extracting JSON LD scripts
-			const scripts = document.querySelectorAll('script[type="application/ld+json"]');
-			let jsonData = null,
-			title,
-			genre,
-			mediaType;
-
-			// Find the last JSON LD script with "@type" as "BreadcrumbList"
-			for (let i = scripts.length - 1; i >= 0; i--) {
-				const script = scripts[i];
-				try {
-					const data = JSON.parse(script.textContent.trim());
-					if (data["@type"] === "BreadcrumbList") {
-						jsonData = data;
-						break;
-					}
-				} catch (error) {
-					console.error("Error parsing JSON:", error);
-				}
+			let breadcrumbData,
+			mediaData,
+			title = document.querySelector("div.DetailsTitle_title__mdRHD > h1").textContent;
+			if(document.querySelector("div.DetailsTitle_subtitle__D30rn")) 
+				title = title.replace(document.querySelector("div.DetailsTitle_subtitle__D30rn").textContent,"");
+			
+			for (let i = 0; i < document.querySelectorAll("script[type='application/ld+json']").length; i++ ) {
+				const data = JSON.parse(document.querySelectorAll("script[type='application/ld+json']")[i].textContent);
+				if (data["@type"] === "BreadcrumbList") 
+					breadcrumbData = data;
+				if (["Movie","Episode","BroadcastEvent"].includes(data["@type"])) 
+					mediaData = data;
 			}
 
-			if (jsonData) {
-				const itemList = jsonData.itemListElement;
-				if (itemList && itemList.length >= 2) {
-					title = itemList[itemList.length - 1].name,
-					 genre = itemList[itemList.length - 2].name,
-					 mediaType = itemList[1].name;
-					console.log("Title:", title);
-					console.log("Genre:", genre);
-					console.log("Media Type:", mediaType);
-				} else 
-					console.log("Not enough items in the list to extract data.");
+			presenceData.largeImageKey = await getShortURL(mediaData.image || mediaData.broadcastOfEvent.image.url);
+
+			if (document.querySelector("div > video")) {
+
+				const video = document.querySelector("div > video") as HTMLVideoElement;
+
+				if (["live"].includes(pathname.split("/")[1])) {
+					presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Live;
+					presenceData.smallImageText = video.paused ? strings.pause : strings.live;
+				} else {
+					presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Differed;
+					presenceData.smallImageText = video.paused ? strings.pause : "En Différé";
+				}
+
 				
-			} else 
-				console.log("No valid JSON LD script found.");
-			
+				let subtitle = "none",
+				category = "none";
+				
+				if (document.querySelector("#ui-wrapper > div")) {
+					title = document.querySelector("TitleDetails_title__vsoUq").textContent;
+					subtitle = document.querySelector("TitleDetails_subtitle__y1v4e").textContent;
+					category = document.querySelector("TitleDetails_category__Azvos").textContent;
+				}
 
-			presenceData.state = privacy
-			? ""
-			: title;
+				presenceData.name = title;
 
-			switch(true) {
-				case ["films"].includes(mediaType.normalize().toLowerCase()): {
-					console.log("Movie");
-					presenceData.details = privacy
-						? (await strings).viewAPage
-						: (await strings).viewMovie; 
-					break;
+				presenceData.state = subtitle;
+				presenceData.details = category;
+
+				presenceData.largeImageText += document.querySelector("div.DetailsTitle_channelCategory__vh_cY") ? ` - ${document.querySelector("div.DetailsTitle_channelCategory__vh_cY").textContent}` : "";
+
+				presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Play;
+				presenceData.smallImageText = video.paused ? strings.pause : strings.play;
+
+			} else {
+				
+				let subtitle = document.querySelector("p.PictoBar_text__0Y_kv")
+					? document.querySelector("p.PictoBar_text__0Y_kv").textContent
+					: ""; // Get Duration
+				if (breadcrumbData) {
+					for (let i = 1; i < breadcrumbData.itemListElement.length; i++) {// Get Genres
+						if(breadcrumbData.itemListElement[i].name !== title)
+							subtitle += ` - ${breadcrumbData.itemListElement[i].name.replace(/s$/i, "")}`;
+					}
 				}
-				case ["series"].includes(mediaType.normalize().toLowerCase()): {
-					console.log("Série");
-					presenceData.details = privacy
-						? (await strings).viewAPage
-						: (await strings).viewSerie;
-					break;
-				}
-				default: {
-					console.log("Undefined");
-					presenceData.details = privacy
-						? (await strings).viewAPage
-						: `${(await strings).viewing.replace(":"," un.e")} ${mediaType.toLowerCase().replace(/s$/,"")} :`;
-					break;
-				}
+
+				presenceData.details = privacy ? strings.viewAPage : strings.viewPage;
+				presenceData.state = privacy ? "" : title;
+				
+				presenceData.largeImageText = subtitle;
+
+				presenceData.smallImageKey = Assets.Reading;
+				presenceData.smallImageText = strings.browsing;
+
+				if (time) presenceData.startTimestamp = browsingTimestamp;
 			}
-			
-			// presenceData.largeImageKey = getChannel(channel).logo;
-			// presenceData.largeImageText = getChannel(channel).channel;
-
-			presenceData.smallImageKey = Assets.Reading;
-			presenceData.smallImageText = (await strings).browsing;
-
-			if (time) presenceData.startTimestamp = browsingTimestamp;
-
 			break;
 		}
 		/* CATEGORY & CHANNEL PAGE
@@ -391,20 +419,20 @@ presence.on("UpdateData", async () => {
 			switch(true) {
 				default: {
 					presenceData.details = privacy
-						? (await strings).viewAPage
-						: (await strings).viewCategory;
+						? strings.viewAPage
+						: strings.viewCategory;
 					break;
 				}
 				case ["chaine"].includes(pathname.split("/")[1]): {
 					presenceData.details = privacy
-						? (await strings).viewAPage
-						: (await strings).viewChannel;
+						? strings.viewAPage
+						: strings.viewChannel;
 					break;
 				}
 				case ["mon-auvio"].includes(pathname.split("/")[1]): {
 					presenceData.details = privacy
-						? (await strings).viewAPage
-						: (await strings).viewList;
+						? strings.viewAPage
+						: strings.viewList;
 					break;
 				}
 			}
@@ -413,7 +441,7 @@ presence.on("UpdateData", async () => {
 			presenceData.largeImageText = getChannel(title).channel;
 
 			presenceData.smallImageKey = Assets.Reading;
-			presenceData.smallImageText = (await strings).browsing;
+			presenceData.smallImageText = strings.browsing;
 
 			if (time) presenceData.startTimestamp = browsingTimestamp;
 
@@ -432,12 +460,12 @@ presence.on("UpdateData", async () => {
 			presenceData.largeImageKey = getChannel(channelName).logo;
 
 			if (["live"].includes(pathname.split("/")[1])) {
-				presenceData.details = (await strings).watchingLive;
+				presenceData.details = strings.watchingLive;
 
 				if (buttons) {
 					presenceData.buttons = [
 						{
-							label: (await strings).buttonWatchStream,
+							label: strings.buttonWatchStream,
 							url: href, // We are not redirecting directly to the raw stream, it's only the livestream page
 						},
 					];
@@ -454,7 +482,7 @@ presence.on("UpdateData", async () => {
 							.textContent.toLowerCase() === "direct"
 					) {
 						presenceData.smallImageKey = Assets.Live;
-						presenceData.smallImageText = (await strings).watchingLive;
+						presenceData.smallImageText = strings.watchingLive;
 						if (time) {
 							presenceData.endTimestamp = presence.getTimestamps(
 								browsingTimestamp,
@@ -482,13 +510,13 @@ presence.on("UpdateData", async () => {
 						}
 					} else {
 						presenceData.smallImageKey = Assets.Differed;
-						presenceData.smallImageText = (await strings).watchingLive;
+						presenceData.smallImageText = strings.watchingLive;
 						if (time) presenceData.startTimestamp = browsingTimestamp;
 
 						if (buttons) {
 							presenceData.buttons = [
 								{
-									label: (await strings).buttonWatchVideo,
+									label: strings.buttonWatchVideo,
 									url: href, // We are not redirecting directly to the raw stream, it's only the livestream page
 								},
 							];
@@ -496,11 +524,11 @@ presence.on("UpdateData", async () => {
 					}
 				} else {
 					presenceData.smallImageKey = Assets.Pause;
-					presenceData.smallImageText = (await strings).pause;
+					presenceData.smallImageText = strings.pause;
 					delete presenceData.startTimestamp;
 				}
 			} else {
-				presenceData.details = `${(await strings).watching} ${
+				presenceData.details = `${strings.watching} ${
 					document.querySelector(
 						"main > nav > ul:last-of-type > li:nth-of-type(2) > a"
 					).textContent
@@ -515,7 +543,7 @@ presence.on("UpdateData", async () => {
 				if (buttons) {
 					presenceData.buttons = [
 						{
-							label: (await strings).buttonWatchVideo,
+							label: strings.buttonWatchVideo,
 							url: href, // We are not redirecting directly to the raw stream, it's only the livestream page
 						},
 					];
@@ -527,10 +555,10 @@ presence.on("UpdateData", async () => {
 						.getAttribute("aria-label") === "pause"
 				) {
 					presenceData.smallImageKey = Assets.Play;
-					presenceData.smallImageText = (await strings).play;
+					presenceData.smallImageText = strings.play;
 				} else {
 					presenceData.smallImageKey = Assets.Pause;
-					presenceData.smallImageText = (await strings).pause;
+					presenceData.smallImageText = strings.pause;
 					delete presenceData.endTimestamp;
 				}
 			}
@@ -557,8 +585,8 @@ presence.on("UpdateData", async () => {
 				!exist("#quickResumeButton")
 			) {
 				presenceData.details = privacy
-					? (await strings).waitingLive
-					: `${(await strings).waitingLiveThe}`;
+					? strings.waitingLive
+					: `${strings.waitingLiveThe}`;
 
 				presenceData.state = privacy
 				? ""
@@ -576,7 +604,7 @@ presence.on("UpdateData", async () => {
 							))}`;
 				
 				presenceData.smallImageKey = Assets.Waiting;
-				presenceData.smallImageText = (await strings).waitingLiveThe;
+				presenceData.smallImageText = strings.waitingLiveThe;
 
 				if (time) {
 					presenceData.endTimestamp = presence.getTimestamps(
@@ -589,8 +617,8 @@ presence.on("UpdateData", async () => {
 				}
 			} else {
 				presenceData.details = privacy
-					? (await strings).viewAPage
-					: `${(await strings).viewPage} ${
+					? strings.viewAPage
+					: `${strings.viewPage} ${
 							document.querySelector(
 								"main > nav > ul:last-of-type > li:nth-of-type(2) > a"
 							).textContent
@@ -599,7 +627,7 @@ presence.on("UpdateData", async () => {
 				presenceData.state = privacy ? "" : mediaName.textContent;
 
 				presenceData.smallImageKey = Assets.Viewing;
-				presenceData.smallImageText = (await strings).viewAPage;
+				presenceData.smallImageText = strings.viewAPage;
 			}
 
 			if (exist("div.DetailsTitle_channelCategory__vh_cY > p")) {
