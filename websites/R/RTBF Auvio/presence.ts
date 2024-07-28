@@ -35,7 +35,9 @@ const presence = new Presence({
 		);
 	};
 let oldLang: string = null,
-	strings: Awaited<ReturnType<typeof getStrings>>;
+	strings: Awaited<ReturnType<typeof getStrings>>,
+	subtitle = "none",
+	category = "none";
 
 /*let currentTitle: string,
 	liveStatus: string,
@@ -230,26 +232,9 @@ function getChannel(channel: string) {
 	}
 }
 
-const shortenedURLs: Record<string, string> = {};
-async function getShortURL(url: string) {
-	if (!url || url.length < 256) return url;
-	if (shortenedURLs[url]) return shortenedURLs[url];
-	try {
-		const pdURL = await (
-			await fetch(`https://pd.premid.app/create/${url}`)
-		).text();
-		shortenedURLs[url] = pdURL;
-		return pdURL;
-	} catch (err) {
-		presence.error(err);
-		return url;
-	}
-}
-
-/*
 function exist(selector: string) {
 	return document.querySelector(selector) !== null;
-}*/
+}
 
 presence.on("UpdateData", async () => {
 	const presenceData: PresenceData = {
@@ -328,55 +313,34 @@ presence.on("UpdateData", async () => {
 			"emission",
 		].includes(pathname.split("/")[1]): {
 			let breadcrumbData,
-			mediaData,
-			title = document.querySelector("div.DetailsTitle_title__mdRHD > h1").textContent;
-			if(document.querySelector("div.DetailsTitle_subtitle__D30rn")) 
-				title = title.replace(document.querySelector("div.DetailsTitle_subtitle__D30rn").textContent,"");
+			mediaData;
 			
+			// Retrieving JSON
 			for (let i = 0; i < document.querySelectorAll("script[type='application/ld+json']").length; i++ ) {
 				const data = JSON.parse(document.querySelectorAll("script[type='application/ld+json']")[i].textContent);
-				if (data["@type"] === "BreadcrumbList") 
+				if (["BreadcrumbList"].includes(data["@type"]) )
 					breadcrumbData = data;
 				if (["Movie","Episode","BroadcastEvent"].includes(data["@type"])) 
 					mediaData = data;
 			}
 
-			presenceData.largeImageKey = await getShortURL(mediaData.image || mediaData.broadcastOfEvent.image.url);
+			/* Processing title
 
-			if (document.querySelector("div > video")) {
-
-				const video = document.querySelector("div > video") as HTMLVideoElement;
-
-				if (["live"].includes(pathname.split("/")[1])) {
-					presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Live;
-					presenceData.smallImageText = video.paused ? strings.pause : strings.live;
-				} else {
-					presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Differed;
-					presenceData.smallImageText = video.paused ? strings.pause : "En Différé";
-				}
-
+			*/
+			let title = document.querySelectorAll("div.DetailsTitle_title__mdRHD")[document.querySelectorAll("div.DetailsTitle_title__mdRHD").length - 1].textContent;
+			if(document.querySelector("div.DetailsTitle_subtitle__D30rn")) {
+				if (title === breadcrumbData.itemListElement[breadcrumbData.itemListElement - 1].name) // If so, it means that the title is more like a topic and the subtitle is more relevant is this case
+					title = document.querySelectorAll("div.DetailsTitle_subtitle__D30rn")[document.querySelectorAll("div.DetailsTitle_subtitle__D30rn").length - 1].textContent;
+				 else 
+					title = title.replace(document.querySelectorAll("div.DetailsTitle_subtitle__D30rn")[document.querySelectorAll("div.DetailsTitle_subtitle__D30rn").length - 1].textContent, ""); // Subtitle is nested in the same div as the title..
+			}
 				
-				let subtitle = "none",
-				category = "none";
-				
-				if (document.querySelector("#ui-wrapper > div")) {
-					title = document.querySelector("TitleDetails_title__vsoUq").textContent;
-					subtitle = document.querySelector("TitleDetails_subtitle__y1v4e").textContent;
-					category = document.querySelector("TitleDetails_category__Azvos").textContent;
-				}
+			presenceData.largeImageKey = mediaData.image || mediaData.broadcastOfEvent.image.url;
 
-				presenceData.name = title;
-
-				presenceData.state = subtitle;
-				presenceData.details = category;
-
-				presenceData.largeImageText += document.querySelector("div.DetailsTitle_channelCategory__vh_cY") ? ` - ${document.querySelector("div.DetailsTitle_channelCategory__vh_cY").textContent}` : "";
-
-				presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Play;
-				presenceData.smallImageText = video.paused ? strings.pause : strings.play;
-
-			} else {
-				
+			if (!exist("div#video-2 > div > div > video")) {
+				/*
+					MEDIA PAGE
+				*/
 				let subtitle = document.querySelector("p.PictoBar_text__0Y_kv")
 					? document.querySelector("p.PictoBar_text__0Y_kv").textContent
 					: ""; // Get Duration
@@ -395,7 +359,39 @@ presence.on("UpdateData", async () => {
 				presenceData.smallImageKey = Assets.Reading;
 				presenceData.smallImageText = strings.browsing;
 
+				//presenceData.state = title;
+				//presenceData.largeImageText = breadcrumbData ? breadcrumbData.itemListElement.reverse()[0].name : "";
 				if (time) presenceData.startTimestamp = browsingTimestamp;
+			} else {
+				/* 
+					MEDIA PLAYER PAGE
+				*/
+				const video = document.querySelector("div > video") as HTMLVideoElement;
+
+				if (["live"].includes(pathname.split("/")[1])) {
+					presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Live;
+					presenceData.smallImageText = video.paused ? strings.pause : strings.live;
+				} else {
+					presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Differed;
+					presenceData.smallImageText = video.paused ? strings.pause : "En Différé";
+				}
+
+				if (document.querySelector("#ui-wrapper > div")) {
+					title = document.querySelector("TitleDetails_title__vsoUq").textContent;
+					subtitle = document.querySelector("TitleDetails_subtitle__y1v4e").textContent;
+					category = document.querySelector("TitleDetails_category__Azvos").textContent;
+				}
+
+				presenceData.name = title;
+
+				presenceData.state = subtitle;
+				presenceData.details = category;
+
+				presenceData.largeImageText += document.querySelector("div.DetailsTitle_channelCategory__vh_cY") ? ` - ${document.querySelector("div.DetailsTitle_channelCategory__vh_cY").textContent}` : "";
+
+				presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Play;
+				presenceData.smallImageText = video.paused ? strings.pause : strings.play;
+
 			}
 			break;
 		}
@@ -408,7 +404,8 @@ presence.on("UpdateData", async () => {
 			"podcasts", // Considered as category
 			"kids", // Considered as category
 			"mon-auvio", 
-			"chaine"
+			"chaine",
+			"mot-cle"
 		].includes(pathname.split("/")[1]): {
 			
 			const title = document.querySelector("h1").textContent;
