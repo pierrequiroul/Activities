@@ -1,62 +1,80 @@
 const presence = new Presence({
 		clientId: "1241444837476274268",
 	}),
-	browsingTimestamp = Math.floor(Date.now() / 1000),
 	getStrings = async () => {
 		return presence.getStrings(
 			{
 				play: "general.playing",
-			pause: "general.paused",
-			search: "general.search",
-			searchSomething: "general.searchSomething",
-			browsing: "general.browsing",
-			viewing: "general.viewing",
-			viewPage: "general.viewPage",
-			viewAPage: "general.viewAPage",
-			viewAccount: "general.viewAccount",
-			viewChannel: "general.viewChannel",
-			viewCategory: "general.viewCategory",
-			viewList: "netflix.viewList",
-			viewSerie: "general.viewSerie",
-			viewShow: "general.viewShow",
-			viewMovie: "general.viewMovie",
-			buttonViewPage: "general.buttonViewPage",
-			watching: "general.watching",
-			watchingAd: "youtube.ad",
-			watchingLive: "general.watchingLive",
-			watchingShow: "general.watchingShow",
-			buttonWatchStream: "general.buttonWatchStream",
-			buttonWatchVideo: "general.buttonWatchVideo",
-			live: "general.live",
-			waitingLive: "general.waitingLive",
-			waitingLiveThe: "general.waitingLiveThe",
+				pause: "general.paused",
+				search: "general.search",
+				searchSomething: "general.searchSomething",
+				browsing: "general.browsing",
+				viewing: "general.viewing",
+				viewPage: "general.viewPage",
+				viewAPage: "general.viewAPage",
+				viewAccount: "general.viewAccount",
+				viewChannel: "general.viewChannel",
+				viewCategory: "general.viewCategory",
+				viewHome: "general.viewHome",
+				viewList: "netflix.viewList",
+				viewSerie: "general.viewSerie",
+				viewShow: "general.viewShow",
+				viewMovie: "general.viewMovie",
+				buttonViewPage: "general.buttonViewPage",
+				watching: "general.watching",
+				watchingAd: "youtube.ad",
+				watchingLive: "general.watchingLive",
+				watchingShow: "general.watchingShow",
+				buttonWatchStream: "general.buttonWatchStream",
+				buttonWatchVideo: "general.buttonWatchVideo",
+				buttonListenAlong: "general.buttonListenAlong",
+				live: "general.live",
+				waitingLive: "general.waitingLive",
+				waitingLiveThe: "general.waitingLiveThe",
+				home: "twitch.home",
+				// Custom strings
+				deferred: "general.deferred",
 			},
 			await presence.getSetting<string>("lang").catch(() => "en")
 		);
 	};
 let oldLang: string = null,
-	strings: Awaited<ReturnType<typeof getStrings>>,
-	subtitle = "none",
-	category = "none";
+	strings: Awaited<ReturnType<typeof getStrings>>;
 
-/*let currentTitle: string,
-	liveStatus: string,
-	videoStatus: string, // Example of possible statuses
-	window.player = { currentTitle, liveStatus, videoStatus };
-	
-	function updatePlayer(title: string, isLive: string, status: string) {
-		player.currentTitle = title;
-		player.liveStatus = isLive;
-		player.videoStatus = status;
+function getAdditionnalStrings(lang: string) {
+	switch (true) {
+		case ["fr-FR"].includes(lang): {
+			strings.deferred = "En Différé";
+			break;
+		}
+		case ["nl-NL"].includes(lang): {
+			strings.deferred = "Uitgestelde";
+			break;
+		}
+		case ["de-DE"].includes(lang): {
+			strings.deferred = "Zeitversetzt";
+			break;
+		}
+		default: {
+			strings.deferred = "Deferred";
+			break;
+		}
 	}
-*/
+}
+
+let title = "Default Title",
+	subtitle = "Default Subtitle",
+	category = "Default Category";
+
 const enum Assets { // Other default assets can be found at index.d.ts
 	Logo = "https://i.imgur.com/m2gRowq.png",
 	Animated = "",
 	Auvio = "https://imgur.com/Ky3l5MZ.png",
-	Differed = "https://imgur.com/uvRMlkv.png",
+	Deffered = "https://imgur.com/uvRMlkv.png",
 	Waiting = "https://imgur.com/W4XSjjC.png",
 	Listening = "https://imgur.com/0yWcS5h.png",
+	Binoculars = "https://i.imgur.com/aF3TWVK.png",
+	LiveAnimated = "https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/2.gif",
 	LaUne = "https://imgur.com/tmFLVEZ.png",
 	Tipik = "https://imgur.com/w7nj6WR.png",
 	LaTrois = "https://imgur.com/7VaOFVk.png",
@@ -81,12 +99,14 @@ const enum Assets { // Other default assets can be found at index.d.ts
 
 function getChannel(channel: string) {
 	channel = channel.toLowerCase();
+	const defaultColor = "#FFFF00";
 	switch (true) {
-		case ["la une","laune"].includes(channel): {
+		case ["la une", "laune"].includes(channel): {
 			return {
 				channel: "La Une",
 				type: ActivityType.Watching,
 				logo: Assets.LaUne,
+				color: "#ee372b",
 			};
 		}
 		case ["tipik"].includes(channel): {
@@ -94,34 +114,39 @@ function getChannel(channel: string) {
 				channel: "Tipik",
 				type: ActivityType.Watching,
 				logo: Assets.Tipik,
+				color: "#0df160",
 			};
 		}
-		case ["la trois","latrois"].includes(channel): {
+		case ["la trois", "latrois"].includes(channel): {
 			return {
 				channel: "La Trois",
 				type: ActivityType.Watching,
 				logo: Assets.LaTrois,
+				color: "#9b49a1",
 			};
 		}
-		case ["classic 21","classic21"].includes(channel): {
+		case ["classic 21", "classic21"].includes(channel): {
 			return {
 				channel: "Classic 21",
 				type: ActivityType.Listening,
 				logo: Assets.Classic21,
+				color: "#8c408a",
 			};
 		}
-		case ["la premiere","la première","lapremiere"].includes(channel): {
+		case ["la premiere", "la première", "lapremiere"].includes(channel): {
 			return {
 				channel: "La Première",
 				type: ActivityType.Listening,
 				logo: Assets.LaPremiere,
+				color: "#083e7a",
 			};
 		}
-		case ["vivacite","vivacité"].includes(channel): {
+		case ["vivacite", "vivacité"].includes(channel): {
 			return {
 				channel: "Vivacité",
 				type: ActivityType.Listening,
 				logo: Assets.Vivacite,
+				color: "#f93308",
 			};
 		}
 		case ["musiq3"].includes(channel): {
@@ -129,6 +154,7 @@ function getChannel(channel: string) {
 				channel: "Musiq3",
 				type: ActivityType.Listening,
 				logo: Assets.Musiq3,
+				color: "#d63c4d",
 			};
 		}
 		case ["tarmac"].includes(channel): {
@@ -136,6 +162,7 @@ function getChannel(channel: string) {
 				channel: "Tarmac",
 				type: ActivityType.Listening,
 				logo: Assets.Tarmac,
+				color: defaultColor,
 			};
 		}
 		case ["jam"].includes(channel): {
@@ -143,6 +170,7 @@ function getChannel(channel: string) {
 				channel: "Jam",
 				type: ActivityType.Listening,
 				logo: Assets.Jam,
+				color: defaultColor,
 			};
 		}
 		case ["viva"].includes(channel): {
@@ -150,6 +178,7 @@ function getChannel(channel: string) {
 				channel: "Viva+",
 				type: ActivityType.Listening,
 				logo: Assets.Viva,
+				color: "#f93308",
 			};
 		}
 		case ["ixpe"].includes(channel): {
@@ -157,13 +186,15 @@ function getChannel(channel: string) {
 				channel: "Ixpé",
 				type: ActivityType.Watching,
 				logo: Assets.Ixpe,
+				color: defaultColor,
 			};
 		}
-		case ["medias de proximite","médias de proximité"].includes(channel): {
+		case ["medias de proximite", "médias de proximité"].includes(channel): {
 			return {
 				channel: "Médias de proximité",
 				type: ActivityType.Watching,
 				logo: Assets.MediasProx,
+				color: defaultColor,
 			};
 		}
 		case ["ab3"].includes(channel): {
@@ -171,6 +202,7 @@ function getChannel(channel: string) {
 				channel: "AB3",
 				type: ActivityType.Watching,
 				logo: Assets.AB3,
+				color: defaultColor,
 			};
 		}
 		case ["abxplore"].includes(channel): {
@@ -178,6 +210,7 @@ function getChannel(channel: string) {
 				channel: "ABXPLORE",
 				type: ActivityType.Watching,
 				logo: Assets.ABXPLORE,
+				color: defaultColor,
 			};
 		}
 		case ["ln24"].includes(channel): {
@@ -185,6 +218,7 @@ function getChannel(channel: string) {
 				channel: "LN24",
 				type: ActivityType.Watching,
 				logo: Assets.LN24,
+				color: defaultColor,
 			};
 		}
 		case ["nrj"].includes(channel): {
@@ -192,6 +226,7 @@ function getChannel(channel: string) {
 				channel: "NRJ",
 				type: ActivityType.Watching,
 				logo: Assets.NRJ,
+				color: defaultColor,
 			};
 		}
 		case ["arte"].includes(channel): {
@@ -199,6 +234,7 @@ function getChannel(channel: string) {
 				channel: "Arte",
 				type: ActivityType.Watching,
 				logo: Assets.Arte,
+				color: defaultColor,
 			};
 		}
 		case ["bruzz"].includes(channel): {
@@ -206,6 +242,7 @@ function getChannel(channel: string) {
 				channel: "BRUZZ",
 				type: ActivityType.Watching,
 				logo: Assets.BRUZZ,
+				color: defaultColor,
 			};
 		}
 		case ["brf"].includes(channel): {
@@ -213,6 +250,7 @@ function getChannel(channel: string) {
 				channel: "BRF",
 				type: ActivityType.Watching,
 				logo: Assets.BRF,
+				color: defaultColor,
 			};
 		}
 		case ["kids"].includes(channel): {
@@ -220,6 +258,7 @@ function getChannel(channel: string) {
 				channel: "RTBF Auvio",
 				type: ActivityType.Watching,
 				logo: Assets.Kids,
+				color: defaultColor,
 			};
 		}
 		default: {
@@ -227,6 +266,7 @@ function getChannel(channel: string) {
 				channel: "RTBF Auvio",
 				type: ActivityType.Watching,
 				logo: Assets.Auvio,
+				color: defaultColor,
 			};
 		}
 	}
@@ -236,6 +276,114 @@ function exist(selector: string) {
 	return document.querySelector(selector) !== null;
 }
 
+// Adapted veryCrunchy's function from YouTube Presence https://github.com/PreMiD/Presences/pull/8000
+async function getThumbnail(
+	src: string,
+	cropLeftPercentage = 0,
+	cropRightPercentage = 0,
+	cropTopPercentage = 0,
+	cropBottomPercentage = 0,
+	progress = 1,
+	borderWidth = 30,
+	borderColor = "#FFFF00"
+): Promise<string> {
+	return new Promise(resolve => {
+		const img = new Image(),
+			wh = 320; // Size of the square thumbnail
+
+		img.crossOrigin = "anonymous";
+		img.src = src;
+
+		img.onload = function () {
+			let croppedWidth,
+				croppedHeight,
+				cropX = 0,
+				cropY = 0;
+
+			// Determine if the image is landscape or portrait
+			const isLandscape = img.width > img.height;
+
+			if (isLandscape) {
+				// Landscape mode: use left and right crop percentages
+				const cropLeft = img.width * cropLeftPercentage;
+				croppedWidth = img.width - cropLeft - img.width * cropRightPercentage;
+				croppedHeight = img.height;
+				cropX = cropLeft;
+			} else {
+				// Portrait mode: use top and bottom crop percentages
+				const cropTop = img.height * cropTopPercentage;
+				croppedWidth = img.width;
+				croppedHeight =
+					img.height - cropTop - img.height * cropBottomPercentage;
+				cropY = cropTop;
+			}
+
+			// Determine the scale to fit the cropped image into the square canvas
+			let newWidth, newHeight, offsetX, offsetY;
+
+			if (isLandscape) {
+				newWidth = wh - 2 * borderWidth;
+				newHeight = (newWidth / croppedWidth) * croppedHeight;
+				offsetX = borderWidth;
+				offsetY = (wh - newHeight) / 2;
+			} else {
+				newHeight = wh - 2 * borderWidth;
+				newWidth = (newHeight / croppedHeight) * croppedWidth;
+				offsetX = (wh - newWidth) / 2;
+				offsetY = borderWidth;
+			}
+
+			const tempCanvas = document.createElement("canvas");
+			tempCanvas.width = wh;
+			tempCanvas.height = wh;
+			const ctx = tempCanvas.getContext("2d"),
+				// Remap progress from 0-1 to 0.03-0.97
+				remappedProgress = 0.07 + progress * (0.93 - 0.07);
+
+			// 1. Fill the canvas with a black background
+			ctx.fillStyle = "#080808";
+			ctx.fillRect(0, 0, wh, wh);
+
+			// 2. Draw the radial progress bar
+			if (remappedProgress > 0) {
+				ctx.beginPath();
+				ctx.moveTo(wh / 2, wh / 2);
+				const startAngle = Math.PI / 4; // 45 degrees in radians, starting from bottom-right
+
+				ctx.arc(
+					wh / 2,
+					wh / 2,
+					wh,
+					startAngle,
+					startAngle + 2 * Math.PI * remappedProgress
+				);
+				ctx.lineTo(wh / 2, wh / 2);
+				ctx.fillStyle = borderColor; // Yellow color for the progress bar
+				ctx.fill();
+			}
+
+			// 3. Draw the cropped image centered and zoomed out based on the borderWidth
+			ctx.drawImage(
+				img,
+				cropX,
+				cropY,
+				croppedWidth,
+				croppedHeight,
+				offsetX,
+				offsetY,
+				newWidth,
+				newHeight
+			);
+
+			resolve(tempCanvas.toDataURL("image/png"));
+		};
+
+		img.onerror = function () {
+			resolve(src);
+		};
+	});
+}
+
 presence.on("UpdateData", async () => {
 	const presenceData: PresenceData = {
 			name: "Auvio",
@@ -243,7 +391,7 @@ presence.on("UpdateData", async () => {
 			largeImageText: "RTBF Auvio",
 			type: ActivityType.Watching,
 		},
-		{ /*hostname,*//* href,*/ pathname } = document.location,
+		{ /*hostname, href,*/ pathname } = document.location,
 		[lang, privacy, time, buttons] = await Promise.all([
 			presence.getSetting<string>("lang").catch(() => "en"),
 			presence.getSetting<boolean>("privacy"),
@@ -254,33 +402,157 @@ presence.on("UpdateData", async () => {
 	if (oldLang !== lang || !strings) {
 		oldLang = lang;
 		strings = await getStrings();
+		getAdditionnalStrings(lang);
 	}
 
 	switch (true) {
-		/* MAIN PAGE (Page principale)
+		/* PODCAST PLAYER */
+		case exist("#audioPlayerContainer") &&
+			document
+				.querySelector("#PlayerUIAudioPlayPauseButton")
+				.getAttribute("aria-label") === "pause": {
+			presenceData.name = exist(".PlayerUIAudio_titleText__HV4Y2")
+				? document.querySelector(".PlayerUIAudio_titleText__HV4Y2").textContent
+				: "Podcast";
+			presenceData.type = ActivityType.Listening;
 
-	(https://auvio.rtbf.be/) */
-		case pathname === "/": {
-			presenceData.details = strings.browsing;
+			presenceData.details = exist(".PlayerUIAudio_titleText__HV4Y2")
+				? document.querySelector(".PlayerUIAudio_titleText__HV4Y2").textContent
+				: "";
+			presenceData.state = exist(".PlayerUIAudio_subtitle__uhGA4")
+				? document.querySelector(".PlayerUIAudio_subtitle__uhGA4").textContent
+				: "";
 
-			presenceData.smallImageKey = Assets.Reading;
+			presenceData.smallImageKey = Assets.Listening;
+			presenceData.smallImageText = strings.play;
+
+			const progress =
+				presence.timestampFromFormat(
+					document
+						.querySelector(".PlayerUIAudio_duration__n7hxV")
+						.textContent.split("/")[0]
+				) /
+				presence.timestampFromFormat(
+					document
+						.querySelector(".PlayerUIAudio_duration__n7hxV")
+						.textContent.split("/")[1]
+				);
+			presenceData.largeImageKey = await getThumbnail(
+				decodeURIComponent(
+					document
+						.querySelector(".PlayerUIAudio_logoContainer__6ffGY > span > img")
+						.getAttribute("src")
+						.replace("/_next/image?url=", "")
+						.split("&w")[0]
+				),
+				0,
+				0,
+				0,
+				0,
+				progress,
+				20,
+				getChannel("default").color
+			);
+			presenceData.largeImageText += " - Podcasts";
+			break;
+		}
+		/* CATEGORY & CHANNEL PAGE
+
+		(ex: https://auvio.rtbf.be/categorie/sport-9 or https://auvio.rtbf.be/chaine/la-une-1) */
+		case [
+			"categorie",
+			"direct", // Considered as category
+			"podcasts", // Considered as category
+			"kids", // Considered as category
+			"mon-auvio",
+			"chaine",
+			"mot-cle",
+		].includes(pathname.split("/")[1]) || pathname === "/": {
+			presenceData.smallImageKey = Assets.Binoculars;
 			presenceData.smallImageText = strings.browsing;
 
-			if (time) presenceData.startTimestamp = browsingTimestamp;
+			if (pathname === "/") presenceData.details = strings.home;
+			else {
+				const title = document.querySelector("h1").textContent;
+
+				presenceData.details = privacy ? "" : title;
+
+				switch (true) {
+					default: {
+						presenceData.state = privacy
+							? strings.viewAPage
+							: strings.viewCategory.replace(":", "");
+
+						/* We randomly pick a cover image from that category */
+						const random = Math.floor(Math.random() * 3),
+							selector = exist("img.TileProgramPoster_hoverPicture__v5RJX")
+								? "img.TileProgramPoster_hoverPicture__v5RJX"
+								: "img.TileMedia_hoverPicture__RGh_m";
+
+						presenceData.largeImageKey = await getThumbnail(
+							decodeURIComponent(
+								document
+									.querySelectorAll(selector)
+									[random].getAttribute("src")
+									.replace("/_next/image?url=", "")
+									.split("&w")[0]
+							),
+							0.22,
+							0.22,
+							0,
+							0.3,
+							1.5,
+							15
+						);
+						if (exist(".TileMedia_title__331RH > h3")) {
+							presenceData.largeImageText += exist(
+								".TileMedia_title__331RH > h3 > div > p"
+							)
+								? ` - ${document
+										.querySelectorAll(".TileMedia_title__331RH > h3")
+										[random].textContent.replace(
+											document.querySelectorAll(
+												".TileMedia_title__331RH > h3 > div > p"
+											)[random].textContent,
+											""
+										)}`
+								: ` - ${
+										document.querySelectorAll(".TileMedia_title__331RH > h3")[
+											random
+										].textContent
+								  }`;
+						}
+						break;
+					}
+					case ["chaine"].includes(pathname.split("/")[1]): {
+						presenceData.state = privacy
+							? strings.viewAPage
+							: strings.viewChannel.replace(":", "");
+
+						presenceData.largeImageKey = getChannel(title).logo;
+						presenceData.largeImageText = getChannel(title).channel;
+						break;
+					}
+					case ["mon-auvio"].includes(pathname.split("/")[1]): {
+						presenceData.state = privacy
+							? strings.viewAPage
+							: strings.viewPage.replace(":", "");
+						break;
+					}
+				}
+			}
 
 			break;
 		}
-
 		/* RESEARCH (Page de recherche)
 
 	(https://auvio.rtbf.be/explorer) */
 		case ["explorer"].includes(pathname.split("/")[1]): {
-			presenceData.details = strings.searchSomething;
+			presenceData.details = strings.browsing;
+			presenceData.state = strings.searchSomething;
 
 			presenceData.smallImageKey = Assets.Search;
 			presenceData.smallImageText = strings.search;
-
-			if (time) presenceData.startTimestamp = browsingTimestamp;
 
 			break;
 		}
@@ -296,155 +568,206 @@ presence.on("UpdateData", async () => {
 			"langues_sous_titres",
 			"parametres_lecture",
 		].includes(pathname.split("/")[1]): {
-			presenceData.details = privacy
-				? strings.viewAPage
-				: strings.viewAccount;
+			presenceData.details = document.querySelector(
+				".UserGateway_title__PkVAb"
+			).textContent;
+			presenceData.state = privacy ? strings.viewAPage : strings.viewAccount;
 
-			presenceData.smallImageKey = Assets.Reading;
+			presenceData.smallImageKey = Assets.Binoculars;
 			presenceData.smallImageText = strings.browsing;
-
-			if (time) presenceData.startTimestamp = browsingTimestamp;
 
 			break;
 		}
-		case [
-			"media",
-			"live",
-			"emission",
-		].includes(pathname.split("/")[1]): {
-			let breadcrumbData,
-			mediaData;
-			
+		case ["media", "live", "emission"].includes(pathname.split("/")[1]): {
+			let breadcrumbData, mediaData;
+
 			// Retrieving JSON
-			for (let i = 0; i < document.querySelectorAll("script[type='application/ld+json']").length; i++ ) {
-				const data = JSON.parse(document.querySelectorAll("script[type='application/ld+json']")[i].textContent);
-				if (["BreadcrumbList"].includes(data["@type"]) )
-					breadcrumbData = data;
-				if (["Movie","Episode","BroadcastEvent"].includes(data["@type"])) 
+			for (
+				let i = 0;
+				i <
+				document.querySelectorAll("script[type='application/ld+json']").length;
+				i++
+			) {
+				const data = JSON.parse(
+					document.querySelectorAll("script[type='application/ld+json']")[i]
+						.textContent
+				);
+				if (["BreadcrumbList"].includes(data["@type"])) breadcrumbData = data;
+				if (["Movie", "Episode", "BroadcastEvent"].includes(data["@type"]))
 					mediaData = data;
 			}
 
 			/* Processing title
 
 			*/
-			let title = document.querySelectorAll("div.DetailsTitle_title__mdRHD")[document.querySelectorAll("div.DetailsTitle_title__mdRHD").length - 1].textContent;
-			if(document.querySelector("div.DetailsTitle_subtitle__D30rn")) {
-				if (title === breadcrumbData.itemListElement[breadcrumbData.itemListElement - 1].name) // If so, it means that the title is more like a topic and the subtitle is more relevant is this case
-					title = document.querySelectorAll("div.DetailsTitle_subtitle__D30rn")[document.querySelectorAll("div.DetailsTitle_subtitle__D30rn").length - 1].textContent;
-				 else 
-					title = title.replace(document.querySelectorAll("div.DetailsTitle_subtitle__D30rn")[document.querySelectorAll("div.DetailsTitle_subtitle__D30rn").length - 1].textContent, ""); // Subtitle is nested in the same div as the title..
+			title = document.querySelectorAll("div.DetailsTitle_title__mdRHD")[
+				document.querySelectorAll("div.DetailsTitle_title__mdRHD").length - 1
+			].textContent;
+			if (document.querySelector("div.DetailsTitle_subtitle__D30rn")) {
+				title = title.replace(
+					document.querySelectorAll("div.DetailsTitle_subtitle__D30rn")[
+						document.querySelectorAll("div.DetailsTitle_subtitle__D30rn")
+							.length - 1
+					].textContent,
+					""
+				); // Subtitle is nested in the same div as the title..
+				if (
+					title.toLowerCase() ===
+					breadcrumbData.itemListElement[
+						breadcrumbData.itemListElement.length - 1
+					].name.toLowerCase()
+				) {
+					// If so, it means that the title is more like a topic and the subtitle is more relevant is this case
+					title = document.querySelectorAll("div.DetailsTitle_subtitle__D30rn")[
+						document.querySelectorAll("div.DetailsTitle_subtitle__D30rn")
+							.length - 1
+					].textContent;
+				}
 			}
-				
-			presenceData.largeImageKey = mediaData.image || mediaData.broadcastOfEvent.image.url;
 
-			if (!exist("div#video-2 > div > div > video")) {
+			const bChannelCategoryShown =
+					document.querySelectorAll(".DetailsTitle_channelCategory__vh_cY > p")
+						.length > 1,
+				channelCategory = bChannelCategoryShown
+					? document.querySelectorAll(
+							".DetailsTitle_channelCategory__vh_cY > p"
+					  )[0].textContent
+					: "";
+
+			if (!exist("#player")) {
 				/*
 					MEDIA PAGE
 				*/
-				let subtitle = document.querySelector("p.PictoBar_text__0Y_kv")
+				subtitle = bChannelCategoryShown ? `${channelCategory} - ` : "";
+				subtitle += document.querySelector("p.PictoBar_text__0Y_kv")
 					? document.querySelector("p.PictoBar_text__0Y_kv").textContent
 					: ""; // Get Duration
 				if (breadcrumbData) {
-					for (let i = 1; i < breadcrumbData.itemListElement.length; i++) {// Get Genres
-						if(breadcrumbData.itemListElement[i].name !== title)
-							subtitle += ` - ${breadcrumbData.itemListElement[i].name.replace(/s$/i, "")}`;
+					for (let i = 1; i < breadcrumbData.itemListElement.length; i++) {
+						// Get Genres
+						if (breadcrumbData.itemListElement[i].name !== title) {
+							subtitle += ` - ${breadcrumbData.itemListElement[i].name.replace(
+								/s$/i,
+								""
+							)}`;
+						}
 					}
 				}
+				if (["live"].includes(pathname.split("/")[1])) category = "direct";
 
-				presenceData.details = privacy ? strings.viewAPage : strings.viewPage;
-				presenceData.state = privacy ? "" : title;
-				
-				presenceData.largeImageText = subtitle;
+				presenceData.details = privacy ? "" : title;
+				presenceData.state = privacy ? "" : subtitle;
 
-				presenceData.smallImageKey = Assets.Reading;
+				presenceData.smallImageKey = Assets.Binoculars;
 				presenceData.smallImageText = strings.browsing;
 
+				presenceData.largeImageKey = await getThumbnail(
+					mediaData.image || mediaData.broadcastOfEvent.image.url,
+					0.425,
+					0.025,
+					0,
+					0,
+					1,
+					20,
+					getChannel(channelCategory).color
+				);
 				//presenceData.state = title;
-				//presenceData.largeImageText = breadcrumbData ? breadcrumbData.itemListElement.reverse()[0].name : "";
-				if (time) presenceData.startTimestamp = browsingTimestamp;
+				presenceData.largeImageText = breadcrumbData
+					? breadcrumbData.itemListElement[
+							breadcrumbData.itemListElement.length - 1
+					  ].name
+					: "";
 			} else {
 				/* 
 					MEDIA PLAYER PAGE
 				*/
-				const video = document.querySelector("div > video") as HTMLVideoElement;
-
-				if (["live"].includes(pathname.split("/")[1])) {
-					presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Live;
-					presenceData.smallImageText = video.paused ? strings.pause : strings.live;
-				} else {
-					presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Differed;
-					presenceData.smallImageText = video.paused ? strings.pause : "En Différé";
-				}
-
 				if (document.querySelector("#ui-wrapper > div")) {
-					title = document.querySelector("TitleDetails_title__vsoUq").textContent;
-					subtitle = document.querySelector("TitleDetails_subtitle__y1v4e").textContent;
-					category = document.querySelector("TitleDetails_category__Azvos").textContent;
+					// Update the variables only if the overlay is visible and the elements are found
+					title =
+						document.querySelector(".TitleDetails_title__vsoUq")?.textContent ||
+						title;
+					subtitle =
+						document.querySelector(".TitleDetails_subtitle__y1v4e")
+							?.textContent || subtitle;
+					category =
+						document.querySelector(".TitleDetails_category__Azvos")
+							?.textContent || category;
 				}
+
+				const video = document.querySelectorAll("div > video")[
+					document.querySelectorAll("div > video").length - 1
+				] as HTMLVideoElement;
+				let progress = video.currentTime / video.duration;
 
 				presenceData.name = title;
 
-				presenceData.state = subtitle;
-				presenceData.details = category;
+				/* LIVE VIDEO PLAYER */
+				if (["live"].includes(pathname.split("/")[1])) {
+					progress =
+						parseFloat(
+							(
+								document.querySelector(
+									".PlayerUITimebar_timebarNow__HoN7c"
+								) as HTMLElement
+							).style.width.replace("%", "")
+						) / 100;
 
-				presenceData.largeImageText += document.querySelector("div.DetailsTitle_channelCategory__vh_cY") ? ` - ${document.querySelector("div.DetailsTitle_channelCategory__vh_cY").textContent}` : "";
+					presenceData.details = title;
+					presenceData.state = subtitle;
 
-				presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Play;
-				presenceData.smallImageText = video.paused ? strings.pause : strings.play;
+					if (["direct"].includes(category.toLowerCase())) {
+						presenceData.smallImageKey = video.played
+							? Assets.Live
+							: Assets.Pause;
+						presenceData.smallImageText = video.played
+							? strings.live
+							: strings.pause;
+					} else if (category.toLowerCase() === "en différé") {
+						presenceData.smallImageKey = video.played
+							? Assets.Deffered
+							: Assets.Pause;
+					}
+					presenceData.smallImageText = video.played
+						? strings.deferred
+						: strings.pause;
 
+					/* VOD VIDEO PLAYER */
+				} else {
+					presenceData.details = title;
+					presenceData.state = bChannelCategoryShown
+						? `${channelCategory} - ${subtitle}`
+						: subtitle;
+
+					presenceData.smallImageKey = video.played
+						? Assets.Play
+						: Assets.Pause;
+					presenceData.smallImageText = video.played
+						? strings.play
+						: strings.pause;
+				}
+
+				presenceData.largeImageKey = await getThumbnail(
+					mediaData.image || mediaData.broadcastOfEvent.image.url,
+					0.425,
+					0.025,
+					0,
+					0,
+					progress,
+					20,
+					getChannel(channelCategory).color
+				);
+				presenceData.largeImageText += document.querySelector(
+					"div.DetailsTitle_channelCategory__vh_cY"
+				)
+					? ` - ${
+							document.querySelector("div.DetailsTitle_channelCategory__vh_cY")
+								.textContent
+					  }`
+					: "";
 			}
 			break;
 		}
-		/* CATEGORY & CHANNEL PAGE
 
-	(ex: https://auvio.rtbf.be/categorie/sport-9 or https://auvio.rtbf.be/chaine/la-une-1) */
-		case [
-			"categorie", 
-			"direct", // Considered as category
-			"podcasts", // Considered as category
-			"kids", // Considered as category
-			"mon-auvio", 
-			"chaine",
-			"mot-cle"
-		].includes(pathname.split("/")[1]): {
-			
-			const title = document.querySelector("h1").textContent;
-			presenceData.state = privacy
-			? ""
-			: title;
-
-			switch(true) {
-				default: {
-					presenceData.details = privacy
-						? strings.viewAPage
-						: strings.viewCategory;
-					break;
-				}
-				case ["chaine"].includes(pathname.split("/")[1]): {
-					presenceData.details = privacy
-						? strings.viewAPage
-						: strings.viewChannel;
-					break;
-				}
-				case ["mon-auvio"].includes(pathname.split("/")[1]): {
-					presenceData.details = privacy
-						? strings.viewAPage
-						: strings.viewList;
-					break;
-				}
-			}
-			
-			presenceData.largeImageKey = getChannel(title).logo;
-			presenceData.largeImageText = getChannel(title).channel;
-
-			presenceData.smallImageKey = Assets.Reading;
-			presenceData.smallImageText = strings.browsing;
-
-			if (time) presenceData.startTimestamp = browsingTimestamp;
-
-			break;
-		}
-		
 		/*
 		case exist("div > video"): {
 			const channelName = document.querySelector(
