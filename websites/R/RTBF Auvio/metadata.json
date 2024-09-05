@@ -36,13 +36,38 @@
 	],
 	"settings": [
 		{
+			"id": "lang",
+			"multiLanguage": true
+		},
+		{
 			"id": "privacy",
 			"title": "Privacy Mode",
 			"icon": "fad fa-user-secret",
 			"value": false
 		},
 		{
+			"id": "usePresenceName",
+			"if": {
+				"privacy": false
+			},
+			"title": "Show Title as Presence",
+			"icon": "fad fa-user-edit",
+			"value": true
+		},
+		{
+			"id": "usePosterImage",
+			"if": {
+				"privacy": false
+			},
+			"title": "Show Poster Image",
+			"icon": "fad fa-images",
+			"value": true
+		},
+		{
 			"id": "time",
+			"if": {
+				"privacy": false
+			},
 			"title": "Show Timestamps",
 			"icon": "fad fa-stopwatch",
 			"value": true
