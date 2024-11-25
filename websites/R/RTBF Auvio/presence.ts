@@ -1,459 +1,71 @@
+import {
+	stringsMap,
+	getAdditionnalStrings,
+	LargeAssets,
+	//getLocalizedAssets,
+	exist,
+	limitText,
+	adjustTimeError,
+	getChannel,
+	getThumbnail,
+	cropPreset,
+	colorsMap
+} from "./util";
+
 const presence = new Presence({
 		clientId: "1241444837476274268",
 	}),
+	browsingTimestamp = Math.floor(Date.now() / 1000),
 	getStrings = async () => {
 		return presence.getStrings(
-			{
-				play: "general.playing",
-				pause: "general.paused",
-				search: "general.search",
-				searchSomething: "general.searchSomething",
-				browsing: "general.browsing",
-				//viewing: "general.viewing",
-				viewPage: "general.viewPage",
-				viewAPage: "general.viewAPage",
-				viewAccount: "general.viewAccount",
-				viewChannel: "general.viewChannel",
-				viewCategory: "general.viewCategory",
-				//viewHome: "general.viewHome",
-				//viewList: "netflix.viewList",
-				//viewSerie: "general.viewSerie",
-				//viewShow: "general.viewShow",
-				//viewMovie: "general.viewMovie",
-				//buttonViewPage: "general.buttonViewPage",
-				//watching: "general.watching",
-				watchingAd: "youtube.ad",
-				watchingLive: "general.watchingLive",
-				watchingShow: "general.watchingShow",
-				watchingMovie: "general.watchingMovie",
-				live: "general.live",
-				waitingLive: "general.waitingLive",
-				waitingLiveThe: "general.waitingLiveThe",
-				home: "twitch.home",
-				// Custom strings
-				deferred: "general.deferred",
-				aPodcast: "general.aPodcast",
-				listening: "general.listening",
-				privacy: "general.privacy",
-				aRadio: "general.aRadio",
-				startsIn: "general.startsIn",
-			},
+			stringsMap,
 			await presence.getSetting<string>("lang").catch(() => "en")
 		);
-	};
+	},
+	slideshow = presence.createSlideshow();
+
 let oldLang: string = null,
-	strings: Awaited<ReturnType<typeof getStrings>>;
-
-function getAdditionnalStrings(lang: string) {
-	switch (true) {
-		case ["fr-FR"].includes(lang): {
-			strings.deferred = "En Différé";
-			strings.aPodcast = "un Podcast";
-			strings.aRadio = "une Radio";
-			strings.listening = "Écoute";
-			strings.privacy = "Lecture privée";
-			strings.startsIn = "Commence dans";
-
-			// Improved translation in context
-			strings.viewAPage = "Regarde une page";
-			strings.waitingLive = "Attend le démarrage du direct";
-			strings.watchingLive = "Regarde un direct";
-			break;
-		}
-		case ["nl-NL"].includes(lang): {
-			strings.deferred = "Uitgestelde";
-			strings.aPodcast = "";
-			strings.aRadio = "";
-			strings.listening = "";
-			strings.privacy = "";
-			strings.startsIn = "";
-			break;
-		}
-		case ["de-DE"].includes(lang): {
-			strings.deferred = "Zeitversetzt";
-			strings.aPodcast = "";
-			strings.aRadio = "";
-			strings.listening = "";
-			strings.privacy = "";
-			strings.startsIn = "";
-			break;
-		}
-		default: {
-			strings.deferred = "Deferred";
-			strings.aPodcast = "a Podcast";
-			strings.aRadio = "a Radio";
-			strings.listening = "Listening";
-			strings.privacy = "Private play";
-			strings.startsIn = "Starts in";
-			break;
-		}
-	}
-}
-
-let title = "Default Title",
+	strings: Awaited<ReturnType<typeof getStrings>>,
+	oldPath = document.location.pathname,
+	title = "Default Title",
 	subtitle = "Default Subtitle",
 	category = "Default Category";
 
-const enum Assets { // Other default assets can be found at index.d.ts
-	Logo = "https://i.imgur.com/m2gRowq.png",
-	Animated = "",
-	Auvio = "https://imgur.com/Ky3l5MZ.png",
-	Deffered = "https://imgur.com/cA3mQhL.gif",
-	Waiting = "https://imgur.com/KULD0Ja.png",
-	Listening = "https://imgur.com/FppuGVE.png",
-	Binoculars = "https://imgur.com/aF3TWVK.png",
-	Privacy = "https://imgur.com/nokHvhE.png",
-	LiveAnimated = "https://imgur.com/oBXFRPE.gif",
-	AdEn = "https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/4.png",
-	AdFr = "https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/5.png",
-	LaUne = "https://imgur.com/tmFLVEZ.png",
-	Tipik = "https://imgur.com/w7nj6WR.png",
-	LaTrois = "https://imgur.com/7VaOFVk.png",
-	Classic21 = "https://imgur.com/Ocr1zGu.png",
-	LaPremiere = "https://imgur.com/Ffjsqzu.png",
-	Vivacite = "https://imgur.com/57XKm7C.png",
-	Musiq3 = "https://imgur.com/syQuNbG.png",
-	Tarmac = "https://imgur.com/cVqhgnM.png",
-	Jam = "https://imgur.com/TmXgxdW.png",
-	Viva = "https://imgur.com/gSR3YWE.png",
-	Ixpe = "https://imgur.com/FGu3BY9.png",
-	MediasProx = "https://imgur.com/Roa6C5I.png",
-	AB3 = "https://imgur.com/utT3GeJ.png",
-	ABXPLORE = "https://imgur.com/lCMetzW.png",
-	LN24 = "https://imgur.com/mLQfLVU.png",
-	NRJ = "https://imgur.com/ffN5YyQ.png",
-	Arte = "https://imgur.com/3IJaVaj.png",
-	BRUZZ = "https://imgur.com/SNtrrxL.png",
-	BRF = "https://imgur.com/pcdX4gD.png",
-	Kids = "https://imgur.com/hCECgHg.png",
-}
-
-function getChannel(channel: string) {
-	channel = channel.toLowerCase().replace(/[éè]/g, "e");
-	const defaultColor = "#FFFF00";
-	switch (true) {
-		case ["la une", "laune"].includes(channel): {
-			return {
-				channel: "La Une",
-				type: ActivityType.Watching,
-				logo: Assets.LaUne,
-				color: "#ee372b",
-			};
-		}
-		case ["tipik"].includes(channel): {
-			return {
-				channel: "Tipik",
-				type: ActivityType.Watching,
-				logo: Assets.Tipik,
-				color: "#0df160",
-			};
-		}
-		case ["la trois", "latrois"].includes(channel): {
-			return {
-				channel: "La Trois",
-				type: ActivityType.Watching,
-				logo: Assets.LaTrois,
-				color: "#9b49a1",
-			};
-		}
-		case ["classic 21", "classic21", "classic"].includes(channel): {
-			return {
-				channel: "Classic 21",
-				type: ActivityType.Listening,
-				logo: Assets.Classic21,
-				color: "#8c408a",
-			};
-		}
-		case ["la premiere", "lapremiere", "la"].includes(channel): {
-			return {
-				channel: "La Première",
-				type: ActivityType.Listening,
-				logo: Assets.LaPremiere,
-				color: "#083e7a",
-			};
-		}
-		case ["vivacite"].includes(channel): {
-			return {
-				channel: "Vivacité",
-				type: ActivityType.Listening,
-				logo: Assets.Vivacite,
-				color: "#f93308",
-			};
-		}
-		case ["musiq3"].includes(channel): {
-			return {
-				channel: "Musiq3",
-				type: ActivityType.Listening,
-				logo: Assets.Musiq3,
-				color: "#d63c4d",
-			};
-		}
-		case ["tarmac"].includes(channel): {
-			return {
-				channel: "Tarmac",
-				type: ActivityType.Listening,
-				logo: Assets.Tarmac,
-				color: "#222222",
-			};
-		}
-		case ["jam"].includes(channel): {
-			return {
-				channel: "Jam",
-				type: ActivityType.Listening,
-				logo: Assets.Jam,
-				color: "#222222",
-			};
-		}
-		case ["viva"].includes(channel): {
-			return {
-				channel: "Viva+",
-				type: ActivityType.Listening,
-				logo: Assets.Viva,
-				color: "#f93308",
-			};
-		}
-		case ["ixpe"].includes(channel): {
-			return {
-				channel: "Ixpé",
-				type: ActivityType.Watching,
-				logo: Assets.Ixpe,
-				color: defaultColor,
-			};
-		}
-		case ["ab3"].includes(channel): {
-			return {
-				channel: "AB3",
-				type: ActivityType.Watching,
-				logo: Assets.AB3,
-				color: defaultColor,
-			};
-		}
-		case ["abxplore"].includes(channel): {
-			return {
-				channel: "ABXPLORE",
-				type: ActivityType.Watching,
-				logo: Assets.ABXPLORE,
-				color: defaultColor,
-			};
-		}
-		case ["ln24"].includes(channel): {
-			return {
-				channel: "LN24",
-				type: ActivityType.Watching,
-				logo: Assets.LN24,
-				color: defaultColor,
-			};
-		}
-		case ["nrj"].includes(channel): {
-			return {
-				channel: "NRJ",
-				type: ActivityType.Watching,
-				logo: Assets.NRJ,
-				color: defaultColor,
-			};
-		}
-		case ["arte"].includes(channel): {
-			return {
-				channel: "Arte",
-				type: ActivityType.Watching,
-				logo: Assets.Arte,
-				color: defaultColor,
-			};
-		}
-		case ["bruzz"].includes(channel): {
-			return {
-				channel: "BRUZZ",
-				type: ActivityType.Watching,
-				logo: Assets.BRUZZ,
-				color: defaultColor,
-			};
-		}
-		case ["brf"].includes(channel): {
-			return {
-				channel: "BRF",
-				type: ActivityType.Watching,
-				logo: Assets.BRF,
-				color: defaultColor,
-			};
-		}
-		case ["kids"].includes(channel): {
-			return {
-				channel: "RTBF Auvio",
-				type: ActivityType.Watching,
-				logo: Assets.Kids,
-				color: defaultColor,
-			};
-		}
-		case [
-			"medias de proximite",
-			"antenne centre",
-			"bx1",
-			"bouke",
-			"canal zoom",
-			"matele",
-			"notele",
-			"rtc",
-			"telemb",
-			"telesambre",
-			"tv com",
-			"tvcom",
-			"tv lux",
-			"tvlux",
-			"vedia",
-		].includes(channel): {
-			return {
-				channel: "Médias de proximité",
-				type: ActivityType.Watching,
-				logo: Assets.MediasProx,
-				color: defaultColor,
-			};
-		}
-		default: {
-			return {
-				channel: "RTBF Auvio",
-				type: ActivityType.Watching,
-				logo: Assets.Auvio,
-				color: defaultColor,
-			};
-		}
-	}
-}
-
-function exist(selector: string) {
-	return document.querySelector(selector) !== null;
-}
-
-// Adapted veryCrunchy's function from YouTube Presence https://github.com/PreMiD/Presences/pull/8000
-async function getThumbnail(
-	src: string,
-	cropLeftPercentage = 0,
-	cropRightPercentage = 0,
-	cropTopPercentage = 0,
-	cropBottomPercentage = 0,
-	progress = 1,
-	borderWidth = 30,
-	borderColor = "#FFFF00"
-): Promise<string> {
-	return new Promise(resolve => {
-		const img = new Image(),
-			wh = 320; // Size of the square thumbnail
-
-		img.crossOrigin = "anonymous";
-		img.src = src;
-
-		img.onload = function () {
-			let croppedWidth,
-				croppedHeight,
-				cropX = 0,
-				cropY = 0;
-
-			// Determine if the image is landscape or portrait
-			const isLandscape = img.width > img.height;
-
-			if (isLandscape) {
-				// Landscape mode: use left and right crop percentages
-				const cropLeft = img.width * cropLeftPercentage;
-				croppedWidth = img.width - cropLeft - img.width * cropRightPercentage;
-				croppedHeight = img.height;
-				cropX = cropLeft;
-			} else {
-				// Portrait mode: use top and bottom crop percentages
-				const cropTop = img.height * cropTopPercentage;
-				croppedWidth = img.width;
-				croppedHeight =
-					img.height - cropTop - img.height * cropBottomPercentage;
-				cropY = cropTop;
-			}
-
-			// Determine the scale to fit the cropped image into the square canvas
-			let newWidth, newHeight, offsetX, offsetY;
-
-			if (isLandscape) {
-				newWidth = wh - 2 * borderWidth;
-				newHeight = (newWidth / croppedWidth) * croppedHeight;
-				offsetX = borderWidth;
-				offsetY = (wh - newHeight) / 2;
-			} else {
-				newHeight = wh - 2 * borderWidth;
-				newWidth = (newHeight / croppedHeight) * croppedWidth;
-				offsetX = (wh - newWidth) / 2;
-				offsetY = borderWidth;
-			}
-
-			const tempCanvas = document.createElement("canvas");
-			tempCanvas.width = wh;
-			tempCanvas.height = wh;
-			const ctx = tempCanvas.getContext("2d"),
-				// Remap progress from 0-1 to 0.03-0.97
-				remappedProgress = 0.07 + progress * (0.93 - 0.07);
-
-			// 1. Fill the canvas with a black background
-			ctx.fillStyle = "#080808";
-			ctx.fillRect(0, 0, wh, wh);
-
-			// 2. Draw the radial progress bar
-			if (remappedProgress > 0) {
-				ctx.beginPath();
-				ctx.moveTo(wh / 2, wh / 2);
-				const startAngle = Math.PI / 4; // 45 degrees in radians, starting from bottom-right
-
-				ctx.arc(
-					wh / 2,
-					wh / 2,
-					wh,
-					startAngle,
-					startAngle + 2 * Math.PI * remappedProgress
-				);
-				ctx.lineTo(wh / 2, wh / 2);
-				ctx.fillStyle = borderColor; // Yellow color for the progress bar
-				ctx.fill();
-			}
-
-			// 3. Draw the cropped image centered and zoomed out based on the borderWidth
-			ctx.drawImage(
-				img,
-				cropX,
-				cropY,
-				croppedWidth,
-				croppedHeight,
-				offsetX,
-				offsetY,
-				newWidth,
-				newHeight
-			);
-
-			resolve(tempCanvas.toDataURL("image/png"));
-		};
-
-		img.onerror = function () {
-			resolve(src);
-		};
-	});
-}
-
 presence.on("UpdateData", async () => {
-	const presenceData: PresenceData = {
+	const { /*hostname, href,*/ pathname } = document.location,
+		pathParts = pathname.split("/"),
+		presenceData: PresenceData = {
 			name: "Auvio",
-			largeImageKey: Assets.Auvio, // Default
+			largeImageKey: LargeAssets.Auvio, // Default
 			largeImageText: "RTBF Auvio",
 			type: ActivityType.Watching,
 		},
-		{ /*hostname, href,*/ pathname } = document.location,
-		[lang, usePresenceName, privacy, time, buttons, poster] = await Promise.all(
-			[
-				presence.getSetting<string>("lang").catch(() => "en"),
-				presence.getSetting<boolean>("usePresenceName"),
-				presence.getSetting<boolean>("privacy"),
-				presence.getSetting<boolean>("timestamp"),
-				presence.getSetting<number>("buttons"),
-				presence.getSetting<boolean>("usePosterImage"),
-			]
-		);
+		[
+			lang,
+			usePresenceName,
+			//useChannelName,
+			usePrivacyMode,
+			useTimestamps,
+			useButtons,
+			usePoster,
+		] = await Promise.all([
+			presence.getSetting<string>("lang").catch(() => "en"),
+			presence.getSetting<boolean>("usePresenceName"),
+			//presence.getSetting<boolean>("useChannelName"),
+			presence.getSetting<boolean>("usePrivacyMode"),
+			presence.getSetting<boolean>("useTimestamps"),
+			presence.getSetting<number>("useButtons"),
+			presence.getSetting<boolean>("usePoster"),
+		]);
 
 	if (oldLang !== lang || !strings) {
 		oldLang = lang;
-		strings = await getStrings();
-		getAdditionnalStrings(lang);
+		strings = getAdditionnalStrings(lang, await getStrings());
+	}
+
+	if (oldPath !== pathname) {
+		oldPath = pathname;
+		slideshow.deleteAllSlides();
 	}
 
 	switch (true) {
@@ -496,17 +108,17 @@ presence.on("UpdateData", async () => {
 					);
 
 				presenceData.name =
-					privacy || !usePresenceName
+				usePrivacyMode || !usePresenceName
 						? strings.aRadio
 						: getChannel(channelName).channel;
 				presenceData.type = ActivityType.Listening;
 
-				presenceData.smallImageKey = privacy
-					? Assets.Privacy
-					: Assets.Listening;
-				presenceData.smallImageText = privacy ? strings.privacy : strings.play;
+				presenceData.smallImageKey = usePrivacyMode
+					? LargeAssets.Privacy
+					: LargeAssets.Listening;
+				presenceData.smallImageText = usePrivacyMode ? strings.privacy : strings.play;
 
-				if (privacy)
+				if (usePrivacyMode)
 					presenceData.details = `${strings.listening} ${strings.aRadio}`;
 				else if (Date.now() % 2 === 0 || secondLine === "") {
 					/* RADIO SHOW NAME 
@@ -532,12 +144,7 @@ presence.on("UpdateData", async () => {
 						  getChannel(channelName).logo
 						: await getThumbnail(
 								coverArt,
-								0,
-								0,
-								0,
-								0,
-								1.5,
-								20,
+								cropPreset.squared,
 								getChannel(channelName).color
 						  );
 					presenceData.largeImageText += " - Radio";
@@ -571,12 +178,7 @@ presence.on("UpdateData", async () => {
 						? getChannel(channelName).logo
 						: await getThumbnail(
 								coverArt,
-								0,
-								0,
-								0,
-								0,
-								1.5,
-								20,
+								cropPreset.squared,
 								getChannel(channelName).color
 						  );
 					presenceData.largeImageText += " - Radio";
@@ -589,28 +191,28 @@ presence.on("UpdateData", async () => {
 				*/
 				presenceData.name =
 					usePresenceName &&
-					!privacy
+					!usePrivacyMode
 						? firstLine
 						: strings.aPodcast;
 				presenceData.type = ActivityType.Listening;
 
 				presenceData.details =
-					!privacy
+					!usePrivacyMode
 						? firstLine
 						: `${strings.listening} ${strings.aPodcast}`;
 
 				presenceData.state =
-					!privacy ? secondLine : "";
+					!usePrivacyMode ? secondLine : "";
 
-				presenceData.smallImageKey = privacy
-					? Assets.Privacy
-					: Assets.Listening;
-				presenceData.smallImageText = privacy ? strings.privacy : strings.play;
+				presenceData.smallImageKey = usePrivacyMode
+					? LargeAssets.Privacy
+					: LargeAssets.Listening;
+				presenceData.smallImageText = usePrivacyMode ? strings.privacy : strings.play;
 
-				if (poster) {
-					const progress =
+				if (usePoster) {
+					/*const progress =
 						presence.timestampFromFormat(duration.split("/")[0]) /
-						presence.timestampFromFormat(duration.split("/")[1]);
+						presence.timestampFromFormat(duration.split("/")[1]);*/
 
 					presenceData.largeImageKey = await getThumbnail(
 						decodeURIComponent( // the url is a weird relative encoded link
@@ -622,20 +224,15 @@ presence.on("UpdateData", async () => {
 								.replace("/_next/image?url=", "")
 								.split("&w")[0]
 						),
-						0,
-						0,
-						0,
-						0,
-						progress,
-						20,
+						cropPreset.squared,
 						getChannel("default").color
 					);
 				}
-				if (!privacy) presenceData.largeImageText += " - Podcasts";
+				if (!usePrivacyMode) presenceData.largeImageText += " - Podcasts";
 			}
 			break;
 		}
-		/* CATEGORY & CHANNEL PAGE
+		/* HOME PAGE, CATEGORY & CHANNEL PAGE
 
 		to do:
 		- color outline per categories
@@ -649,97 +246,98 @@ presence.on("UpdateData", async () => {
 			"mon-auvio",
 			"chaine",
 			"mot-cle",
-		].includes(pathname.split("/")[1]) || pathname === "/": {
-			presenceData.smallImageKey = Assets.Binoculars;
+			"premium"
+		].includes(pathParts[1]) || pathname === "/": {
+
+			presenceData.details = strings.browsing;
+
+			presenceData.smallImageKey = LargeAssets.Binoculars;
 			presenceData.smallImageText = strings.browsing;
 
-			if (pathname === "/")
-				presenceData.details = privacy ? strings.viewAPage : strings.home;
-			else {
-				const title = document.querySelector("h1").textContent;
+			if (usePrivacyMode) {
+				presenceData.state = strings.viewAPage;
+	
+				presenceData.smallImageKey = LargeAssets.Privacy;
+				presenceData.smallImageText = strings.privacy;
+			} else if (pathname === "/") {
+					// HOME PAGE
+					presenceData.state = strings.viewHome;
+					if (useTimestamps) presenceData.startTimestamp = browsingTimestamp;
+				} else {
+					// CATEGORY AND CHANNEL PAGE
+					const categoryTitle = document.querySelector("h1").textContent;
 
-				presenceData.details = privacy
-					? strings.browsing
-					: pathname.split("/")[1] === "podcasts"
-					? `${title} & Radios`
-					: title;
+					presenceData.details = pathParts[1] === "podcasts"
+						? `${categoryTitle} & Radios`
+						: categoryTitle;
 
-				switch (true) {
-					default: {
-						presenceData.state = privacy
-							? strings.viewAPage
-							: strings.viewCategory.replace(":", "");
+					switch (pathParts[1]) {
+						case "chaine": {
+							presenceData.state = strings.viewChannel.replace(":", "");
 
-						if (poster) {
-							/* We randomly pick a cover image from that category in the first swiper*/
-							const random = Math.floor(Math.random() * (document.querySelector(".swiper-wrapper").childElementCount - 1)),
-								selector = exist("img.TileProgramPoster_hoverPicture__v5RJX")
-									? "img.TileProgramPoster_hoverPicture__v5RJX" // If programs cover art are in portrait
-									: "img.TileMedia_hoverPicture__RGh_m"; // If programs cover art are in landscape
-
-							presenceData.largeImageKey = await getThumbnail(
-								decodeURIComponent(
-									document
-										.querySelectorAll(selector)
-										[random].getAttribute("src")
-										.replace("/_next/image?url=", "")
-										.split("&w")[0]
-								),
-								0.22,
-								0.22,
-								0,
-								0.3,
-								1.5,
-								15
-							);
-							if (exist(".TileMedia_title__331RH > h3")) {
-								presenceData.largeImageText += exist(
-									".TileMedia_title__331RH > h3 > div > p"
-								)
-									? ` - ${document
-											.querySelectorAll(".TileMedia_title__331RH > h3")
-											[random].textContent.replace(
-												document.querySelectorAll(
-													".TileMedia_title__331RH > h3 > div > p"
-												)[random].textContent,
-												""
-											)}`
-									: ` - ${
-											document.querySelectorAll(".TileMedia_title__331RH > h3")[
-												random
-											].textContent
-									  }`;
-							}
+							presenceData.largeImageKey = getChannel(categoryTitle).logo;
+							presenceData.largeImageText = getChannel(categoryTitle).channel;
+							break;
 						}
-						break;
-					}
-					case ["chaine"].includes(pathname.split("/")[1]): {
-						presenceData.state = privacy
-							? strings.viewAPage
-							: strings.viewChannel.replace(":", "");
+						case "mon-auvio": {
+							presenceData.state = strings.viewPage.replace(":", "");
+							break;
+						}
+						default: {
+							presenceData.state = strings.viewCategory.replace(":", "");
 
-						presenceData.largeImageKey = getChannel(title).logo;
-						presenceData.largeImageText = getChannel(title).channel;
+							if (usePoster) {
+
+								presenceData.largeImageKey = LargeAssets.Logo;
+								presenceData.largeImageText = `Catégorie ${categoryTitle} sur Auvio`;
+
+								const selector = exist("img.TileProgramPoster_hoverPicture__v5RJX")
+										? "img.TileProgramPoster_hoverPicture__v5RJX" // If programs cover art are in portrait
+										: "img.TileMedia_hoverPicture__RGh_m";// If programs cover art are in landscape
+										
+								for (let index = 0; index < 5/*document.querySelector(".swiper-wrapper").childElementCount*/; index++) {
+									const tempData = structuredClone(presenceData), // Deep copy
+									mediaTitle = document.querySelectorAll(selector)[index]?.getAttribute("title") || index.toString();
+									tempData.largeImageKey = await getThumbnail(
+										decodeURIComponent(
+											document
+												.querySelectorAll(selector)
+												[index].getAttribute("src")
+												.replace("/_next/image?url=", "")
+												.split("&w")[0]
+										),
+										exist("img.TileProgramPoster_hoverPicture__v5RJX") ? cropPreset.vertical : cropPreset.horizontal,
+										colorsMap.get(categoryTitle.toLowerCase()) || colorsMap.get("")
+
+									);
+									if (mediaTitle !== index.toString()) {
+										tempData.largeImageText = " sur Auvio";
+										tempData.largeImageText = limitText(mediaTitle, 128 - tempData.largeImageText.length) + tempData.largeImageText;
+									}
+									slideshow.addSlide(mediaTitle, tempData, 5000);
+								}
+							}
 						break;
-					}
-					case ["mon-auvio"].includes(pathname.split("/")[1]): {
-						presenceData.state = privacy
-							? strings.viewAPage
-							: strings.viewPage.replace(":", "");
-						break;
+						}
 					}
 				}
-			}
-
-			break;
+		break;
 		}
+
 		/* RESEARCH (Page de recherche)
 
-	(https://auvio.rtbf.be/explorer) */
-		case ["explorer"].includes(pathname.split("/")[1]): {
-			presenceData.details = strings.browsing;
-			presenceData.state = strings.searchSomething;
+		(https://auvio.rtbf.be/explorer) */
+		case ["explorer"].includes(pathParts[1]): {
 
+			const searchQuery = (document.querySelector("input.PageContent_inputSearch__8B4AC") as HTMLInputElement).value;
+
+			if (searchQuery !== "") {
+				presenceData.details = strings.browsing;
+				presenceData.state = `${strings.searchFor} ${searchQuery}`;
+			} else {
+				presenceData.details = strings.browsing;
+				presenceData.state = strings.searchSomething;
+			}
 			presenceData.smallImageKey = Assets.Search;
 			presenceData.smallImageText = strings.search;
 
@@ -748,7 +346,7 @@ presence.on("UpdateData", async () => {
 
 		/* ACCOUNT & ACCOUNT SETTINGS PAGE
 
-	(ex: https://auvio.rtbf.be/mes_informations) */
+		(ex: https://auvio.rtbf.be/mes_informations) */
 		case [
 			"mes_informations",
 			"controle_parental",
@@ -756,41 +354,41 @@ presence.on("UpdateData", async () => {
 			"mes_offres_premium",
 			"langues_sous_titres",
 			"parametres_lecture",
-		].includes(pathname.split("/")[1]): {
-			presenceData.details = privacy
+		].includes(pathParts[1]): {
+			presenceData.details = usePrivacyMode
 				? strings.browsing
 				: document.querySelector(".UserGateway_title__PkVAb").textContent;
-			presenceData.state = privacy ? strings.viewAPage : strings.viewAccount;
+			presenceData.state = usePrivacyMode ? strings.viewAPage : strings.viewAccount;
 
-			presenceData.smallImageKey = privacy || document.querySelector(".HeaderUser_text__tpHR7").textContent.toLowerCase().includes("se connecter")
-				? Assets.Binoculars
+			presenceData.smallImageKey = usePrivacyMode || document.querySelector(".HeaderUser_text__tpHR7").textContent.toLowerCase().includes("se connecter")
+				? LargeAssets.Binoculars
 				: document
 						.querySelector(".HeaderUser_avatar__pbBy2 > span > img")
 						.getAttribute("src");
-			presenceData.smallImageText = privacy
+			presenceData.smallImageText = usePrivacyMode
 				? strings.browsing
 				: document.querySelector(".HeaderUser_text__tpHR7").textContent;
 
-			presenceData.largeImageKey = Assets.Logo;
+			presenceData.largeImageKey = LargeAssets.Logo;
 			break;
 		}
-		case ["media", "live", "emission"].includes(pathname.split("/")[1]): {
+		case ["media", "live", "emission"].includes(pathParts[1]): {
 			let breadcrumbData, mediaData;
-			if (privacy) {
+			if (usePrivacyMode) {
 				if (!exist("#player")) {
 					presenceData.details = strings.browsing;
 					presenceData.state = strings.viewAPage;
 				} else {
 					switch (true) {
-						case pathname.split("/")[1] === "media": {
+						case pathParts[1] === "media": {
 							presenceData.state = strings.watchingMovie;
 							break;
 						}
-						case pathname.split("/")[1] === "emission": {
+						case pathParts[1] === "emission": {
 							presenceData.state = strings.watchingShow;
 							break;
 						}
-						case pathname.split("/")[1] === "live": {
+						case pathParts[1] === "live": {
 							presenceData.state = strings.watchingLive;
 							break;
 						}
@@ -875,7 +473,7 @@ presence.on("UpdateData", async () => {
 						}
 					}
 
-					if (["live"].includes(pathname.split("/")[1])) {
+					if (["live"].includes(pathParts[1])) {
 						category = "direct";
 						if (exist(".LiveCountdown_container__zxHMI")) {
 							const countdown = exist(".LiveCountdown_countdown__vevrl")
@@ -892,32 +490,27 @@ presence.on("UpdateData", async () => {
 									.textContent.replace("|", "");
 							}
 
-							presenceData.smallImageKey = Assets.Waiting;
+							presenceData.smallImageKey = LargeAssets.Waiting;
 							presenceData.smallImageText = strings.waitingLive;
 						} else {
 							presenceData.details = title;
 							presenceData.state = subtitle;
 
-							presenceData.smallImageKey = Assets.Binoculars;
+							presenceData.smallImageKey = LargeAssets.Binoculars;
 							presenceData.smallImageText = strings.browsing;
 						}
 					} else {
 						presenceData.details = title;
 						presenceData.state = subtitle;
 
-						presenceData.smallImageKey = Assets.Binoculars;
+						presenceData.smallImageKey = LargeAssets.Binoculars;
 						presenceData.smallImageText = strings.browsing;
 					}
 
-					if (poster) {
+					if (usePoster) {
 						presenceData.largeImageKey = await getThumbnail(
 							mediaData.image || mediaData.broadcastOfEvent.image.url,
-							0.425,
-							0.025,
-							0,
-							0,
-							1,
-							20,
+							cropPreset.horizontal,
 							getChannel(channelCategory).color
 						);
 					}
@@ -951,20 +544,31 @@ presence.on("UpdateData", async () => {
 							"div.redbee-player-media-container > video"
 						).length - 1
 					] as HTMLVideoElement;
-					let progress = video.currentTime / video.duration;
+					//let progress = video.currentTime / video.duration;
 
 					if (usePresenceName) presenceData.name = title;
 
+					if (useTimestamps) {
+						if(video.paused) {
+							presenceData.startTimestamp = browsingTimestamp;
+							delete presenceData.endTimestamp;
+						} else {
+							presenceData.startTimestamp = adjustTimeError(presence.getTimestampsfromMedia(video)[0], 5);
+							presenceData.endTimestamp = adjustTimeError(presence.getTimestampsfromMedia(video)[1], 5);
+						}
+					}
+						
+
 					/* LIVE VIDEO PLAYER */
-					if (["live"].includes(pathname.split("/")[1])) {
-						progress =
+					if (["live"].includes(pathParts[1])) {
+						/*progress =
 							parseFloat(
 								(
 									document.querySelector(
 										".PlayerUITimebar_timebarNow__HoN7c"
 									) as HTMLElement
 								).style.width.replace("%", "")
-							) / 100;
+							) / 100;*/
 
 						presenceData.details = title;
 
@@ -974,14 +578,12 @@ presence.on("UpdateData", async () => {
 								: `${strings.watchingLive} sur Auvio`;
 						} else presenceData.state = subtitle;
 
-						if (
+						/*if (
 							document.querySelector(".sas-ctrl-countdown").textContent !== ""
 						) {
-							presenceData.smallImageKey = ["fr-FR"].includes(lang)
-								? Assets.AdFr
-								: Assets.AdEn;
+							presenceData.smallImageKey = getLocalizedAssets(lang, "Ad");
 							presenceData.smallImageText = strings.watchingAd;
-						} else if (["direct"].includes(category.toLowerCase())) {
+						} else */if (["direct"].includes(category.toLowerCase())) {
 							presenceData.smallImageKey = video.played
 								? Assets.Live
 								: Assets.Pause;
@@ -990,7 +592,7 @@ presence.on("UpdateData", async () => {
 								: strings.pause;
 						} else if (category.toLowerCase() === "en différé") {
 							presenceData.smallImageKey = video.played
-								? Assets.Deffered
+								? LargeAssets.Deffered
 								: Assets.Pause;
 						}
 						presenceData.smallImageText = video.played
@@ -1004,32 +606,25 @@ presence.on("UpdateData", async () => {
 							? `${channelCategory} - ${subtitle}`
 							: subtitle;
 
-						if (
-							document.querySelector(".sas-ctrl-countdown").textContent !== ""
+						/*if (
+							document.querySelector(".sas-ctrl-countdown")?.textContent !== ""
 						) {
-							presenceData.smallImageKey = ["fr-FR"].includes(lang)
-								? Assets.AdFr
-								: Assets.AdEn;
+							presenceData.smallImageKey = getLocalizedAssets(lang, "Ad");
 							presenceData.smallImageText = strings.watchingAd;
-						} else {
+						} else {*/
 							presenceData.smallImageKey = video.played
 								? Assets.Play
 								: Assets.Pause;
 							presenceData.smallImageText = video.played
 								? strings.play
 								: strings.pause;
-						}
+						//}
 					}
 
-					if (poster) {
+					if (usePoster) {
 						presenceData.largeImageKey = await getThumbnail(
 							mediaData.image || mediaData.broadcastOfEvent.image.url,
-							0.425,
-							0.025,
-							0,
-							0,
-							progress,
-							20,
+							cropPreset.horizontal,
 							getChannel(channelCategory).color
 						);
 					}
@@ -1050,20 +645,24 @@ presence.on("UpdateData", async () => {
 		// In case we need a default
 		default: {
 			presenceData.details = strings.viewAPage;
+			presenceData.state = pathname;
 			break;
 		}
 	}
 
-	if ((presenceData.startTimestamp || presenceData.endTimestamp) && !time) {
+	if ((presenceData.startTimestamp || presenceData.endTimestamp) && !useTimestamps) {
 		delete presenceData.startTimestamp;
 		delete presenceData.endTimestamp;
 	}
 	if (presenceData.details === "") delete presenceData.details;
 	if (presenceData.state === "") delete presenceData.state;
 
-	if ((!buttons || privacy) && presenceData.buttons)
+	if ((!useButtons || usePrivacyMode) && presenceData.buttons)
 		delete presenceData.buttons;
 
-	if (presenceData.details) presence.setActivity(presenceData);
-	else presence.setActivity();
+	if (slideshow.getSlides().length > 0) {
+		presence.setActivity(slideshow);
+		console.log(slideshow);
+	} else if (presenceData.details) presence.setActivity(presenceData);
+	else presence.clearActivity();
 });
