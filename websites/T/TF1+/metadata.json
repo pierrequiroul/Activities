@@ -1,0 +1,84 @@
+{
+	"$schema": "https://schemas.premid.app/metadata/1.11",
+	"apiVersion": 1,
+	"author": {
+		"id": "87107972676751360",
+		"name": "pierrequlroule"
+	},
+	"service": "TF1+",
+	"description": {
+		"en": "description"
+	},
+	"url": "tf1.fr",
+	"version": "1.0.0",
+	"logo": "https://i.imgur.com/6mE4m6d.png",
+	"thumbnail": "https://i.imgur.com/U0gqmxs.png",
+	"color": "#0000ff",
+	"category": "videos",
+	"tags": [
+		"france",
+		"tf1",
+		"streaming",
+		"tv",
+		"broadcast",
+		"media"
+	],
+	"settings": [
+		{
+			"id": "lang",
+			"multiLanguage": true
+		},
+		{
+			"id": "usePrivacyMode",
+			"title": "Privacy Mode",
+			"icon": "fad fa-user-secret",
+			"value": false
+		},
+		{
+			"id": "usePresenceName",
+			"if": {
+				"usePrivacyMode": false
+			},
+			"title": "Show Title as Presence",
+			"icon": "fad fa-user-edit",
+			"value": true
+		},
+		{
+			"id": "useChannelName",
+			"if": {
+				"usePrivacyMode": false,
+				"usePresenceName": true
+			},
+			"title": "Show Live Channel as Presence",
+			"icon": "fad fa-signal-stream",
+			"value": true
+		},
+		{
+			"id": "usePoster",
+			"if": {
+				"usePrivacyMode": false
+			},
+			"title": "Show Poster Image",
+			"icon": "fad fa-images",
+			"value": true
+		},
+		{
+			"id": "useTimestamps",
+			"if": {
+				"usePrivacyMode": false
+			},
+			"title": "Show Timestamps",
+			"icon": "fad fa-stopwatch",
+			"value": true
+		},
+		{
+			"id": "useButtons",
+			"if": {
+				"usePrivacyMode": false
+			},
+			"title": "Show Buttons",
+			"icon": "fas fa-compress-arrows-alt",
+			"value": true
+		}
+	]
+}
