@@ -9,7 +9,7 @@ import {
 	getChannel,
 	getThumbnail,
 	cropPreset,
-	colorsMap
+	colorsMap,
 } from "./util";
 
 const presence = new Presence({
@@ -79,15 +79,16 @@ presence.on("UpdateData", async () => {
 			document
 				.querySelector("#PlayerUIAudioPlayPauseButton")
 				.getAttribute("aria-label") === "pause": {
-			const firstLine = exist(".PlayerUIAudio_titleText__HV4Y2") ? document.querySelector(
-					".PlayerUIAudio_titleText__HV4Y2"
-				).textContent : "",
-				secondLine = exist(".PlayerUIAudio_subtitle__uhGA4") ? document.querySelector(
-					".PlayerUIAudio_subtitle__uhGA4"
-				).textContent : "",
-				duration = exist(".PlayerUIAudio_duration__n7hxV") ? document.querySelector(
-					".PlayerUIAudio_duration__n7hxV"
-				).textContent : "";
+			const firstLine = exist(".PlayerUIAudio_titleText__HV4Y2")
+					? document.querySelector(".PlayerUIAudio_titleText__HV4Y2")
+							.textContent
+					: "",
+				secondLine = exist(".PlayerUIAudio_subtitle__uhGA4")
+					? document.querySelector(".PlayerUIAudio_subtitle__uhGA4").textContent
+					: "",
+				duration = exist(".PlayerUIAudio_duration__n7hxV")
+					? document.querySelector(".PlayerUIAudio_duration__n7hxV").textContent
+					: "";
 
 			/* 
 			RADIO LIVE FEED 
@@ -108,7 +109,7 @@ presence.on("UpdateData", async () => {
 					);
 
 				presenceData.name =
-				usePrivacyMode || !usePresenceName
+					usePrivacyMode || !usePresenceName
 						? strings.aRadio
 						: getChannel(channelName).channel;
 				presenceData.type = ActivityType.Listening;
@@ -116,7 +117,9 @@ presence.on("UpdateData", async () => {
 				presenceData.smallImageKey = usePrivacyMode
 					? LargeAssets.Privacy
 					: LargeAssets.Listening;
-				presenceData.smallImageText = usePrivacyMode ? strings.privacy : strings.play;
+				presenceData.smallImageText = usePrivacyMode
+					? strings.privacy
+					: strings.play;
 
 				if (usePrivacyMode)
 					presenceData.details = `${strings.listening} ${strings.aRadio}`;
@@ -190,24 +193,21 @@ presence.on("UpdateData", async () => {
 				Podcasts can be original programs or past broadcasts.
 				*/
 				presenceData.name =
-					usePresenceName &&
-					!usePrivacyMode
-						? firstLine
-						: strings.aPodcast;
+					usePresenceName && !usePrivacyMode ? firstLine : strings.aPodcast;
 				presenceData.type = ActivityType.Listening;
 
-				presenceData.details =
-					!usePrivacyMode
-						? firstLine
-						: `${strings.listening} ${strings.aPodcast}`;
+				presenceData.details = !usePrivacyMode
+					? firstLine
+					: `${strings.listening} ${strings.aPodcast}`;
 
-				presenceData.state =
-					!usePrivacyMode ? secondLine : "";
+				presenceData.state = !usePrivacyMode ? secondLine : "";
 
 				presenceData.smallImageKey = usePrivacyMode
 					? LargeAssets.Privacy
 					: LargeAssets.Listening;
-				presenceData.smallImageText = usePrivacyMode ? strings.privacy : strings.play;
+				presenceData.smallImageText = usePrivacyMode
+					? strings.privacy
+					: strings.play;
 
 				if (usePoster) {
 					/*const progress =
@@ -215,7 +215,8 @@ presence.on("UpdateData", async () => {
 						presence.timestampFromFormat(duration.split("/")[1]);*/
 
 					presenceData.largeImageKey = await getThumbnail(
-						decodeURIComponent( // the url is a weird relative encoded link
+						decodeURIComponent(
+							// the url is a weird relative encoded link
 							document
 								.querySelector(
 									".PlayerUIAudio_logoContainer__6ffGY > span > img"
@@ -246,9 +247,8 @@ presence.on("UpdateData", async () => {
 			"mon-auvio",
 			"chaine",
 			"mot-cle",
-			"premium"
+			"premium",
 		].includes(pathParts[1]) || pathname === "/": {
-
 			presenceData.details = strings.browsing;
 
 			presenceData.smallImageKey = LargeAssets.Binoculars;
@@ -256,80 +256,89 @@ presence.on("UpdateData", async () => {
 
 			if (usePrivacyMode) {
 				presenceData.state = strings.viewAPage;
-	
+
 				presenceData.smallImageKey = LargeAssets.Privacy;
 				presenceData.smallImageText = strings.privacy;
 			} else if (pathname === "/") {
-					// HOME PAGE
-					presenceData.state = strings.viewHome;
-					if (useTimestamps) presenceData.startTimestamp = browsingTimestamp;
-				} else {
-					// CATEGORY AND CHANNEL PAGE
-					const categoryTitle = document.querySelector("h1").textContent;
+				// HOME PAGE
+				presenceData.state = strings.viewHome;
+				if (useTimestamps) presenceData.startTimestamp = browsingTimestamp;
+			} else {
+				// CATEGORY AND CHANNEL PAGE
+				const categoryTitle = document.querySelector("h1").textContent;
 
-					presenceData.details = pathParts[1] === "podcasts"
+				presenceData.details =
+					pathParts[1] === "podcasts"
 						? `${categoryTitle} & Radios`
 						: categoryTitle;
 
-					switch (pathParts[1]) {
-						case "chaine": {
-							presenceData.state = strings.viewChannel.replace(":", "");
+				presenceData.state = strings.viewCategory.replace(":", "");
 
-							presenceData.largeImageKey = getChannel(categoryTitle).logo;
-							presenceData.largeImageText = getChannel(categoryTitle).channel;
-							break;
-						}
-						case "mon-auvio": {
-							presenceData.state = strings.viewPage.replace(":", "");
-							break;
-						}
-						default: {
-							presenceData.state = strings.viewCategory.replace(":", "");
+				// Fallback
+				presenceData.largeImageKey = await getThumbnail(
+					getChannel(pathParts[1]).logo,
+					cropPreset.squared,
+					colorsMap.get(categoryTitle.toLowerCase().replace(/[éè]/g, "e")) || colorsMap.get("")
+				);
+				presenceData.largeImageText = `Catégorie ${categoryTitle} sur Auvio`;
 
-							if (usePoster) {
+				if (usePoster) {
+					const selector = exist("img.TileProgramPoster_hoverPicture__v5RJX")
+						? "img.TileProgramPoster_hoverPicture__v5RJX" // If programs cover art are in portrait
+						: "img.TileMedia_hoverPicture__RGh_m"; // If programs cover art are in landscape
 
-								presenceData.largeImageKey = LargeAssets.Logo;
-								presenceData.largeImageText = `Catégorie ${categoryTitle} sur Auvio`;
+					for (
+						let index = 0;
+						index < document.querySelector(".swiper-wrapper").childElementCount;
+						index++
+					) {
+						const src = decodeURIComponent(
+							document
+								.querySelectorAll(selector)
+								[index]?.getAttribute("src")
+								.replace("/_next/image?url=", "")
+								.split("&w")[0] || ""
+						);
 
-								const selector = exist("img.TileProgramPoster_hoverPicture__v5RJX")
-										? "img.TileProgramPoster_hoverPicture__v5RJX" // If programs cover art are in portrait
-										: "img.TileMedia_hoverPicture__RGh_m";// If programs cover art are in landscape
-										
-								for (let index = 0; index < 5/*document.querySelector(".swiper-wrapper").childElementCount*/; index++) {
-									const tempData = structuredClone(presenceData), // Deep copy
-									mediaTitle = document.querySelectorAll(selector)[index]?.getAttribute("title") || index.toString();
-									tempData.largeImageKey = await getThumbnail(
-										decodeURIComponent(
-											document
-												.querySelectorAll(selector)
-												[index].getAttribute("src")
-												.replace("/_next/image?url=", "")
-												.split("&w")[0]
-										),
-										exist("img.TileProgramPoster_hoverPicture__v5RJX") ? cropPreset.vertical : cropPreset.horizontal,
-										colorsMap.get(categoryTitle.toLowerCase()) || colorsMap.get("")
+						// Sometimes url starts with data:image and it doesn't render well, so we take no risks
+						if (!src.match("data:image") && src !== "") {
+							const tempData = structuredClone(presenceData), // Deep copy
+								mediaTitle =
+									document
+										.querySelectorAll(selector)
+										[index]?.getAttribute("title") || index.toString();
 
-									);
-									if (mediaTitle !== index.toString()) {
-										tempData.largeImageText = " sur Auvio";
-										tempData.largeImageText = limitText(mediaTitle, 128 - tempData.largeImageText.length) + tempData.largeImageText;
-									}
-									slideshow.addSlide(mediaTitle, tempData, 5000);
-								}
+							tempData.largeImageKey = await getThumbnail(
+								src,
+								exist("img.TileProgramPoster_hoverPicture__v5RJX")
+									? cropPreset.vertical
+									: cropPreset.horizontal,
+								colorsMap.get(categoryTitle.toLowerCase().replace(/[éè]/g, "e")) || colorsMap.get("")
+							);
+							if (mediaTitle !== index.toString()) {
+								const end = ` ${strings.on} ${
+									pathParts[1].includes("chaine") ? categoryTitle : "Auvio"
+								}`;
+								tempData.largeImageText = tempData.state =
+									limitText(mediaTitle, 128 - end.length) + end;
 							}
-						break;
+							slideshow.addSlide(mediaTitle, tempData, 5000);
 						}
 					}
 				}
-		break;
+			}
+			break;
 		}
 
 		/* RESEARCH (Page de recherche)
 
 		(https://auvio.rtbf.be/explorer) */
 		case ["explorer"].includes(pathParts[1]): {
-
-			const searchQuery = (document.querySelector("input.PageContent_inputSearch__8B4AC") as HTMLInputElement).value;
+			const searchQuery = (
+				document.querySelector(
+					"input.PageContent_inputSearch__8B4AC"
+				) as HTMLInputElement
+			).value;
 
 			if (searchQuery !== "") {
 				presenceData.details = strings.browsing;
@@ -358,13 +367,20 @@ presence.on("UpdateData", async () => {
 			presenceData.details = usePrivacyMode
 				? strings.browsing
 				: document.querySelector(".UserGateway_title__PkVAb").textContent;
-			presenceData.state = usePrivacyMode ? strings.viewAPage : strings.viewAccount;
+			presenceData.state = usePrivacyMode
+				? strings.viewAPage
+				: strings.viewAccount;
 
-			presenceData.smallImageKey = usePrivacyMode || document.querySelector(".HeaderUser_text__tpHR7").textContent.toLowerCase().includes("se connecter")
-				? LargeAssets.Binoculars
-				: document
-						.querySelector(".HeaderUser_avatar__pbBy2 > span > img")
-						.getAttribute("src");
+			presenceData.smallImageKey =
+				usePrivacyMode ||
+				document
+					.querySelector(".HeaderUser_text__tpHR7")
+					.textContent.toLowerCase()
+					.includes("se connecter")
+					? LargeAssets.Binoculars
+					: document
+							.querySelector(".HeaderUser_avatar__pbBy2 > span > img")
+							.getAttribute("src");
 			presenceData.smallImageText = usePrivacyMode
 				? strings.browsing
 				: document.querySelector(".HeaderUser_text__tpHR7").textContent;
@@ -549,15 +565,20 @@ presence.on("UpdateData", async () => {
 					if (usePresenceName) presenceData.name = title;
 
 					if (useTimestamps) {
-						if(video.paused) {
+						if (video.paused) {
 							presenceData.startTimestamp = browsingTimestamp;
 							delete presenceData.endTimestamp;
 						} else {
-							presenceData.startTimestamp = adjustTimeError(presence.getTimestampsfromMedia(video)[0], 5);
-							presenceData.endTimestamp = adjustTimeError(presence.getTimestampsfromMedia(video)[1], 5);
+							presenceData.startTimestamp = adjustTimeError(
+								presence.getTimestampsfromMedia(video)[0],
+								5
+							);
+							presenceData.endTimestamp = adjustTimeError(
+								presence.getTimestampsfromMedia(video)[1],
+								5
+							);
 						}
 					}
-						
 
 					/* LIVE VIDEO PLAYER */
 					if (["live"].includes(pathParts[1])) {
@@ -583,7 +604,7 @@ presence.on("UpdateData", async () => {
 						) {
 							presenceData.smallImageKey = getLocalizedAssets(lang, "Ad");
 							presenceData.smallImageText = strings.watchingAd;
-						} else */if (["direct"].includes(category.toLowerCase())) {
+						} else */ if (["direct"].includes(category.toLowerCase())) {
 							presenceData.smallImageKey = video.played
 								? Assets.Live
 								: Assets.Pause;
@@ -612,12 +633,12 @@ presence.on("UpdateData", async () => {
 							presenceData.smallImageKey = getLocalizedAssets(lang, "Ad");
 							presenceData.smallImageText = strings.watchingAd;
 						} else {*/
-							presenceData.smallImageKey = video.played
-								? Assets.Play
-								: Assets.Pause;
-							presenceData.smallImageText = video.played
-								? strings.play
-								: strings.pause;
+						presenceData.smallImageKey = video.played
+							? Assets.Play
+							: Assets.Pause;
+						presenceData.smallImageText = video.played
+							? strings.play
+							: strings.pause;
 						//}
 					}
 
@@ -650,7 +671,10 @@ presence.on("UpdateData", async () => {
 		}
 	}
 
-	if ((presenceData.startTimestamp || presenceData.endTimestamp) && !useTimestamps) {
+	if (
+		(presenceData.startTimestamp || presenceData.endTimestamp) &&
+		!useTimestamps
+	) {
 		delete presenceData.startTimestamp;
 		delete presenceData.endTimestamp;
 	}

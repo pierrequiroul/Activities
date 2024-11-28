@@ -33,9 +33,13 @@ export const stringsMap = {
 	privacy: "general.privacy",
 	aRadio: "general.aRadio",
 	startsIn: "general.startsIn",
+	on: "general.on",
 };
 
-export function getAdditionnalStrings(lang: string, strings: typeof stringsMap): typeof stringsMap {
+export function getAdditionnalStrings(
+	lang: string,
+	strings: typeof stringsMap
+): typeof stringsMap {
 	switch (lang) {
 		case "fr-FR": {
 			strings.deferred = "En Différé";
@@ -44,6 +48,7 @@ export function getAdditionnalStrings(lang: string, strings: typeof stringsMap):
 			strings.listening = "Écoute";
 			strings.privacy = "Lecture privée";
 			strings.startsIn = "Commence dans";
+			strings.on = "sur";
 
 			// Improved translation in context
 			strings.viewAPage = "Regarde une page";
@@ -58,6 +63,7 @@ export function getAdditionnalStrings(lang: string, strings: typeof stringsMap):
 			strings.listening = "";
 			strings.privacy = "";
 			strings.startsIn = "";
+			strings.on = "op";
 			break;
 		}
 		case "de-DE": {
@@ -67,6 +73,7 @@ export function getAdditionnalStrings(lang: string, strings: typeof stringsMap):
 			strings.listening = "";
 			strings.privacy = "";
 			strings.startsIn = "";
+			strings.on = "auf";
 			break;
 		}
 		default: {
@@ -76,6 +83,7 @@ export function getAdditionnalStrings(lang: string, strings: typeof stringsMap):
 			strings.listening = "Listening";
 			strings.privacy = "Private play";
 			strings.startsIn = "Starts in";
+			strings.on = "on";
 			break;
 		}
 	}
@@ -161,45 +169,81 @@ export function adjustTimeError(time: number, acceptableError: number): number {
 	return cachedTime;
 }
 
-export const colorsMap = new Map<string, string>([
+export const colorsMap = new Map<string, string | number[][]>([
+	/*
+	Plain color in hexadecimal ex: #ffaa00
+	Gradient colors in RGB ex: [R, G, B, GradientOffset]
+	*/
 	// Default colors
-	["", "#ffcc00"], 
+	["", "#ffcc00"],
 	// Category colors
 	["séries", "#b92561"],
 	["films", "#7e55a5"],
-	["animés", "#df4f08"],
+	[
+		"animés",
+		[
+			[255, 226, 63, 0.2],
+			[255, 9, 119, 0.5],
+			[59, 124, 154, 0.75],
+		],
+	],
 	["sport", "#15c6a4"],
 	["info", "#109aa9"],
 	["kids", "#434b66"],
 	["documentaires", "#345a4a"],
 	["divertissement", "#444d90"],
-	["noir jaune belge", "#9c2d2e"],
+	[
+		"noir jaune belge",
+		[
+			[7, 7, 7, 0.15],
+			[198, 170, 34, 0.45],
+			[194, 57, 57, 0.8],
+		],
+	],
 	["lifestyle", "#714e6e"],
 	["culture", "#863d67"],
 	["musique", "#4a6f6f"],
-	["lgbtqia+", "#748d7b"],
+	[
+		"lgbtqia+",
+		[
+			[242, 130, 10, 0.2],
+			[142, 171, 102, 0.3],
+			[156, 60, 115, 0.6],
+			[68, 37, 128, 0.8],
+		],
+	],
 	["décodage médias", "#b26e38"],
 	["archives sonuma", "#663c2a"],
-	["direct", "#e55232"]
-  ]);
+	["direct", "#e55232"],
+	// Channel colors
+	["la une", "#ee372b"],
+	["tipik", "#0df160"],
+	["la trois", "#9b49a1"],
+	["classic 21", "#8c408a"],
+	["la premiere", "#083e7a"],
+	["vivacite", "#f93308"],
+	["musiq3", "#d63c4d"],
+	["tarmac", "#222222"],
+	["jam", "#222222"],
+	["viva", "#f93308"],
+]);
 
 interface ChannelInfo {
 	channel: string;
 	type: ActivityType;
 	logo: LargeAssets;
-	color: string; // Optional property
+	color: string | number[][]; // Optional property
 }
 
 export function getChannel(channel: string): ChannelInfo {
 	channel = channel.toLowerCase().replace(/[éè]/g, "e");
-	const defaultColor = "#ffcc00";
 	switch (true) {
 		case ["la une", "laune"].includes(channel): {
 			return {
 				channel: "La Une",
 				type: ActivityType.Watching,
 				logo: LargeAssets.LaUne,
-				color: "#ee372b",
+				color: colorsMap.get("la une"),
 			};
 		}
 		case ["tipik"].includes(channel): {
@@ -207,7 +251,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "Tipik",
 				type: ActivityType.Watching,
 				logo: LargeAssets.Tipik,
-				color: "#0df160",
+				color: colorsMap.get("tipik"),
 			};
 		}
 		case ["la trois", "latrois"].includes(channel): {
@@ -215,7 +259,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "La Trois",
 				type: ActivityType.Watching,
 				logo: LargeAssets.LaTrois,
-				color: "#9b49a1",
+				color: colorsMap.get("la trois"),
 			};
 		}
 		case ["classic 21", "classic21", "classic"].includes(channel): {
@@ -223,7 +267,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "Classic 21",
 				type: ActivityType.Listening,
 				logo: LargeAssets.Classic21,
-				color: "#8c408a",
+				color: colorsMap.get("classic 21"),
 			};
 		}
 		case ["la premiere", "lapremiere", "la"].includes(channel): {
@@ -231,7 +275,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "La Première",
 				type: ActivityType.Listening,
 				logo: LargeAssets.LaPremiere,
-				color: "#083e7a",
+				color: colorsMap.get("la premiere"),
 			};
 		}
 		case ["vivacite"].includes(channel): {
@@ -239,7 +283,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "Vivacité",
 				type: ActivityType.Listening,
 				logo: LargeAssets.Vivacite,
-				color: "#f93308",
+				color: colorsMap.get("vivacite"),
 			};
 		}
 		case ["musiq3"].includes(channel): {
@@ -247,7 +291,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "Musiq3",
 				type: ActivityType.Listening,
 				logo: LargeAssets.Musiq3,
-				color: "#d63c4d",
+				color: colorsMap.get("musiq3"),
 			};
 		}
 		case ["tarmac"].includes(channel): {
@@ -255,7 +299,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "Tarmac",
 				type: ActivityType.Listening,
 				logo: LargeAssets.Tarmac,
-				color: "#222222",
+				color: colorsMap.get("tarmac"),
 			};
 		}
 		case ["jam"].includes(channel): {
@@ -263,7 +307,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "Jam",
 				type: ActivityType.Listening,
 				logo: LargeAssets.Jam,
-				color: "#222222",
+				color: colorsMap.get("jam"),
 			};
 		}
 		case ["viva"].includes(channel): {
@@ -271,7 +315,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "Viva+",
 				type: ActivityType.Listening,
 				logo: LargeAssets.Viva,
-				color: "#f93308",
+				color: colorsMap.get("viva"),
 			};
 		}
 		case ["ixpe"].includes(channel): {
@@ -279,7 +323,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "Ixpé",
 				type: ActivityType.Watching,
 				logo: LargeAssets.Ixpe,
-				color: defaultColor,
+				color: colorsMap.get(""),
 			};
 		}
 		case ["ab3"].includes(channel): {
@@ -287,7 +331,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "AB3",
 				type: ActivityType.Watching,
 				logo: LargeAssets.AB3,
-				color: defaultColor,
+				color: colorsMap.get(""),
 			};
 		}
 		case ["abxplore"].includes(channel): {
@@ -295,7 +339,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "ABXPLORE",
 				type: ActivityType.Watching,
 				logo: LargeAssets.ABXPLORE,
-				color: defaultColor,
+				color: colorsMap.get(""),
 			};
 		}
 		case ["ln24"].includes(channel): {
@@ -303,7 +347,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "LN24",
 				type: ActivityType.Watching,
 				logo: LargeAssets.LN24,
-				color: defaultColor,
+				color: colorsMap.get(""),
 			};
 		}
 		case ["nrj"].includes(channel): {
@@ -311,7 +355,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "NRJ",
 				type: ActivityType.Watching,
 				logo: LargeAssets.NRJ,
-				color: defaultColor,
+				color: colorsMap.get(""),
 			};
 		}
 		case ["arte"].includes(channel): {
@@ -319,7 +363,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "Arte",
 				type: ActivityType.Watching,
 				logo: LargeAssets.Arte,
-				color: defaultColor,
+				color: colorsMap.get(""),
 			};
 		}
 		case ["bruzz"].includes(channel): {
@@ -327,7 +371,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "BRUZZ",
 				type: ActivityType.Watching,
 				logo: LargeAssets.BRUZZ,
-				color: defaultColor,
+				color: colorsMap.get(""),
 			};
 		}
 		case ["brf"].includes(channel): {
@@ -335,7 +379,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "BRF",
 				type: ActivityType.Watching,
 				logo: LargeAssets.BRF,
-				color: defaultColor,
+				color: colorsMap.get(""),
 			};
 		}
 		case ["kids"].includes(channel): {
@@ -343,7 +387,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "RTBF Auvio",
 				type: ActivityType.Watching,
 				logo: LargeAssets.Kids,
-				color: defaultColor,
+				color: colorsMap.get(""),
 			};
 		}
 		case [
@@ -367,7 +411,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "Médias de proximité",
 				type: ActivityType.Watching,
 				logo: LargeAssets.MediasProx,
-				color: defaultColor,
+				color: colorsMap.get(""),
 			};
 		}
 		default: {
@@ -375,7 +419,7 @@ export function getChannel(channel: string): ChannelInfo {
 				channel: "RTBF Auvio",
 				type: ActivityType.Watching,
 				logo: LargeAssets.Auvio,
-				color: defaultColor,
+				color: colorsMap.get(""),
 			};
 		}
 	}
@@ -390,37 +434,13 @@ export const cropPreset = {
 	horizontal: [0.425, 0.025, 0, 0],
 };
 
-async function isImageValid(url: string): Promise<boolean> {
-    return new Promise(resolve => {
-        const testImage = new Image();
-        testImage.src = url;
-
-        testImage.onload = () => {
-            // Check if width or height is 0
-            if (testImage.width === 0 || testImage.height === 0) 
-                resolve(false);
-             else 
-                resolve(true);
-            
-        };
-
-        testImage.onerror = () => {
-            resolve(false);
-        };
-    });
-}
-
 export async function getThumbnail(
 	src: string = LargeAssets.Logo,
 	cropPercentages: typeof cropPreset.squared = cropPreset.squared, // Left, Right, top, Bottom
-	borderColor = colorsMap.get(""),
+	borderColor: string | number[][] = colorsMap.get(""),
 	borderWidth = 15,
-	progress = 2,
+	progress = 2
 ): Promise<string> {
-	// Validate the image source
-	if (!(await isImageValid(src))) 
-		return LargeAssets.Logo;
-	
 	return new Promise(resolve => {
 		const img = new Image(),
 			wh = 320; // Size of the square thumbnail
@@ -447,8 +467,7 @@ export async function getThumbnail(
 				// Portrait mode: use top and bottom crop percentages
 				const cropTop = img.height * cropPercentages[2];
 				croppedWidth = img.width;
-				croppedHeight =
-					img.height - cropTop - img.height * cropPercentages[3];
+				croppedHeight = img.height - cropTop - img.height * cropPercentages[3];
 				cropY = cropTop;
 			}
 
@@ -492,7 +511,22 @@ export async function getThumbnail(
 					startAngle + 2 * Math.PI * remappedProgress
 				);
 				ctx.lineTo(wh / 2, wh / 2);
-				ctx.fillStyle = borderColor; // Yellow color for the progress bar
+
+				if (Array.isArray(borderColor)) {
+					// Create a triangular gradient
+					const gradient = ctx.createLinearGradient(0, 0, wh, wh);
+					for (const colorStep of borderColor) {
+						gradient.addColorStop(
+							colorStep[3], // Use the fourth value as the step position
+							`rgba(${colorStep[0]}, ${colorStep[1]}, ${colorStep[2]}, 1)` // Use RGB, alpha fixed at 1
+						);
+					}
+					ctx.fillStyle = gradient;
+				} else {
+					// borderColor for the border
+					ctx.fillStyle = borderColor;
+				}
+
 				ctx.fill();
 			}
 
