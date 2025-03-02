@@ -1,0 +1,34 @@
+{
+  "RTBFAuvio.deferred": {
+    "description": "Used when a livestream is no longer live but with a delay. Often because the content has been paused or rewound.",
+    "message": "Deferred"
+  },
+  "RTBFAuvio.aPodcast": {
+    "description": "Used with general string \"Listening to\" to form \"Listening to a Podcast\" in privacy mode",
+    "message": "a Podcast"
+  },
+  "RTBFAuvio.aRadio": {
+    "description": "Used with general string \"Listening\" to form \"Listening to a Radio\" in privacy mode.",
+    "message": "a Radio"
+  },
+  "RTBFAuvio.toAPodcast": {
+    "description": "Used with ActivityType \"Listening\" to form \"Listening to a Podcast\" in privacy mode",
+    "message": "to a Podcast"
+  },
+  "RTBFAuvio.toARadio": {
+    "description": "Used with ActivityType \"Listening\" to form \"Listening to a Radio\" in privacy mode.",
+    "message": "to a Radio"
+  },
+  "RTBFAuvio.startsIn": {
+    "description": "Used when a livestream is about to be launched. {0} is used to write the time before launch.",
+    "message": "Starts in {0}"
+  },
+  "RTBFAuvio.on": {
+    "description": "Used to specify that content is on a channel or by default on Auvio. For example \"Iron Man on Auvio\"",
+    "message": "{0} on {1}"
+  },
+  "RTBFAuvio.privatePlay": {
+    "description": "Used when playing in privacy mode",
+    "message": "Private play"
+  }
+}
