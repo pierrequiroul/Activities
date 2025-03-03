@@ -76,15 +76,6 @@
       "value": true
     },
     {
-      "id": "useTimestamps",
-      "if": {
-        "usePrivacyMode": false
-      },
-      "title": "Show Timestamps",
-      "icon": "fad fa-stopwatch",
-      "value": true
-    },
-    {
       "id": "useButtons",
       "if": {
         "usePrivacyMode": false

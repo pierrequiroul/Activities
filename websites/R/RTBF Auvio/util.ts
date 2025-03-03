@@ -255,6 +255,20 @@ export function limitText(input: string, maxLength = 128): string {
   return truncated + ellipsis
 }
 
+export function formatDuration(time: string) {
+  const [hours, minutes, seconds] = time.split(':').map(Number)
+
+  if (hours! > 0) {
+    return minutes! > 0 ? `${hours}h${minutes}` : `${hours}h`
+  }
+  else if (minutes! > 0) {
+    return `${minutes} min`
+  }
+  else {
+    return `${seconds} sec`
+  }
+}
+
 export const colorsMap = new Map<string, string | number[][]>([
 /* Plain color in hexadecimal ex: #ffaa00
 Gradient colors in RGB ex: [R, G, B, GradientOffset] */
@@ -527,116 +541,121 @@ export async function getThumbnail(
   borderWidth = 15,
   progress = 2,
 ): Promise<string> {
-  return new Promise((resolve) => {
-    const img = new Image()
-    const wh = 320 // Size of the square thumbnail
+  if (!src.match('data:image')) {
+    return new Promise((resolve) => {
+      const img = new Image()
+      const wh = 320 // Size of the square thumbnail
 
-    img.crossOrigin = 'anonymous'
-    img.src = src
+      img.crossOrigin = 'anonymous'
+      img.src = src
 
-    img.onload = async function () {
-      let croppedWidth
-      let croppedHeight
-      let cropX = 0
-      let cropY = 0
+      img.onload = async function () {
+        let croppedWidth
+        let croppedHeight
+        let cropX = 0
+        let cropY = 0
 
-      // Determine if the image is landscape or portrait
-      const isLandscape = img.width > img.height
+        // Determine if the image is landscape or portrait
+        const isLandscape = img.width > img.height
 
-      if (isLandscape) {
+        if (isLandscape) {
         // Landscape mode: use left and right crop percentages
-        const cropLeft = img.width * cropPercentages[0]!
-        croppedWidth = img.width - cropLeft - img.width * cropPercentages[1]!
-        croppedHeight = img.height
-        cropX = cropLeft
-      }
-      else {
-        // Portrait mode: use top and bottom crop percentages
-        const cropTop = img.height * cropPercentages[2]!
-        croppedWidth = img.width
-        croppedHeight = img.height - cropTop - img.height * cropPercentages[3]!
-        cropY = cropTop
-      }
-
-      // Determine the scale to fit the cropped image into the square canvas
-      let newWidth, newHeight, offsetX, offsetY
-
-      if (isLandscape) {
-        newWidth = wh - 2 * borderWidth
-        newHeight = (newWidth / croppedWidth) * croppedHeight
-        offsetX = borderWidth
-        offsetY = (wh - newHeight) / 2
-      }
-      else {
-        newHeight = wh - 2 * borderWidth
-        newWidth = (newHeight / croppedHeight) * croppedWidth
-        offsetX = (wh - newWidth) / 2
-        offsetY = borderWidth
-      }
-
-      const tempCanvas = document.createElement('canvas')
-      tempCanvas.width = wh
-      tempCanvas.height = wh
-      const ctx = tempCanvas.getContext('2d')!
-      // Remap progress from 0-1 to 0.03-0.97
-      const remappedProgress = 0.07 + progress * (0.93 - 0.07)
-
-      // 1. Fill the canvas with a black background
-      ctx.fillStyle = '#080808'
-      ctx.fillRect(0, 0, wh, wh)
-
-      // 2. Draw the radial progress bar
-      if (remappedProgress > 0) {
-        ctx.beginPath()
-        ctx.moveTo(wh / 2, wh / 2)
-        const startAngle = Math.PI / 4 // 45 degrees in radians, starting from bottom-right
-
-        ctx.arc(
-          wh / 2,
-          wh / 2,
-          wh,
-          startAngle,
-          startAngle + 2 * Math.PI * remappedProgress,
-        )
-        ctx.lineTo(wh / 2, wh / 2)
-
-        if (Array.isArray(borderColor)) {
-          // Create a triangular gradient
-          const gradient = ctx.createLinearGradient(0, 0, wh, wh)
-          for (const colorStep of borderColor) {
-            gradient.addColorStop(
-              colorStep[3]!, // Use the fourth value as the step position
-              `rgba(${colorStep[0]}, ${colorStep[1]}, ${colorStep[2]}, 1)`, // Use RGB, alpha fixed at 1
-            )
-          }
-          ctx.fillStyle = gradient
+          const cropLeft = img.width * cropPercentages[0]!
+          croppedWidth = img.width - cropLeft - img.width * cropPercentages[1]!
+          croppedHeight = img.height
+          cropX = cropLeft
         }
         else {
-          // borderColor for the border
-          ctx.fillStyle = borderColor
+        // Portrait mode: use top and bottom crop percentages
+          const cropTop = img.height * cropPercentages[2]!
+          croppedWidth = img.width
+          croppedHeight = img.height - cropTop - img.height * cropPercentages[3]!
+          cropY = cropTop
         }
 
-        ctx.fill()
+        // Determine the scale to fit the cropped image into the square canvas
+        let newWidth, newHeight, offsetX, offsetY
+
+        if (isLandscape) {
+          newWidth = wh - 2 * borderWidth
+          newHeight = (newWidth / croppedWidth) * croppedHeight
+          offsetX = borderWidth
+          offsetY = (wh - newHeight) / 2
+        }
+        else {
+          newHeight = wh - 2 * borderWidth
+          newWidth = (newHeight / croppedHeight) * croppedWidth
+          offsetX = (wh - newWidth) / 2
+          offsetY = borderWidth
+        }
+
+        const tempCanvas = document.createElement('canvas')
+        tempCanvas.width = wh
+        tempCanvas.height = wh
+        const ctx = tempCanvas.getContext('2d')!
+        // Remap progress from 0-1 to 0.03-0.97
+        const remappedProgress = 0.07 + progress * (0.93 - 0.07)
+
+        // 1. Fill the canvas with a black background
+        ctx.fillStyle = '#080808'
+        ctx.fillRect(0, 0, wh, wh)
+
+        // 2. Draw the radial progress bar
+        if (remappedProgress > 0) {
+          ctx.beginPath()
+          ctx.moveTo(wh / 2, wh / 2)
+          const startAngle = Math.PI / 4 // 45 degrees in radians, starting from bottom-right
+
+          ctx.arc(
+            wh / 2,
+            wh / 2,
+            wh,
+            startAngle,
+            startAngle + 2 * Math.PI * remappedProgress,
+          )
+          ctx.lineTo(wh / 2, wh / 2)
+
+          if (Array.isArray(borderColor)) {
+          // Create a triangular gradient
+            const gradient = ctx.createLinearGradient(0, 0, wh, wh)
+            for (const colorStep of borderColor) {
+              gradient.addColorStop(
+                colorStep[3]!, // Use the fourth value as the step position
+                `rgba(${colorStep[0]}, ${colorStep[1]}, ${colorStep[2]}, 1)`, // Use RGB, alpha fixed at 1
+              )
+            }
+            ctx.fillStyle = gradient
+          }
+          else {
+          // borderColor for the border
+            ctx.fillStyle = borderColor
+          }
+
+          ctx.fill()
+        }
+
+        // 3. Draw the cropped image centered and zoomed out based on the borderWidth
+        ctx.drawImage(
+          img,
+          cropX,
+          cropY,
+          croppedWidth,
+          croppedHeight,
+          offsetX,
+          offsetY,
+          newWidth,
+          newHeight,
+        )
+
+        resolve(tempCanvas.toDataURL('image/png'))
       }
 
-      // 3. Draw the cropped image centered and zoomed out based on the borderWidth
-      ctx.drawImage(
-        img,
-        cropX,
-        cropY,
-        croppedWidth,
-        croppedHeight,
-        offsetX,
-        offsetY,
-        newWidth,
-        newHeight,
-      )
-
-      resolve(tempCanvas.toDataURL('image/png'))
-    }
-
-    img.onerror = function () {
-      resolve(ActivityAssets.Logo)
-    }
-  })
+      img.onerror = function () {
+        resolve(ActivityAssets.Logo)
+      }
+    })
+  }
+  else {
+    return ActivityAssets.Logo
+  }
 }
