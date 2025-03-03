@@ -1,13 +1,13 @@
-import { ActivityType, Assets, getTimestampsFromMedia } from 'premid'
+import { ActivityType, Assets, getTimestamps, getTimestampsFromMedia, timestampFromFormat } from 'premid'
 import {
   ActivityAssets,
-  adjustTimeError,
   checkStringLanguage,
   colorsMap,
   cropPreset,
   // getLocalizedAssets,
   exist,
   getChannel,
+  getLocalizedAssets,
   getSetting,
   getThumbnail,
   limitText,
@@ -16,12 +16,12 @@ import {
 } from './util.js'
 
 const browsingTimestamp = Math.floor(Date.now() / 1000)
-const slideshow = presence.createSlideshow()
+const slideshow = new Slideshow()
 
 let oldPath = document.location.pathname
-let title = 'Default Title'
-let subtitle = 'Default Subtitle'
-let category = 'Default Category'
+let title = ''
+let subtitle = ''
+let category = ''
 
 presence.on('UpdateData', async () => {
   const { /* hostname, href, */ pathname } = document.location
@@ -59,137 +59,151 @@ presence.on('UpdateData', async () => {
     slideshow.deleteAllSlides()
   }
 
+  let useSlideshow = false
+
   switch (true) {
     /* PODCAST PLAYER
 
     When a podcast is played, it appears in an audio player at the bottom of the screen.
     Once a podcast has been launched, it is visible at all times throughout the site until the website is refreshed. */
-    case exist('#audioPlayerContainer')
-      && document.querySelector('#PlayerUIAudioPlayPauseButton')?.getAttribute('aria-label') === 'pause': {
-      const firstLine = document.querySelector('.PlayerUIAudio_titleText__HV4Y2')?.textContent ?? ''
-      const secondLine = document.querySelector('.PlayerUIAudio_subtitle__uhGA4')?.textContent ?? ''
-      const duration = document.querySelector('.PlayerUIAudio_duration__n7hxV')?.textContent ?? ''
+    case exist('#audioPlayerContainer'): {
+      if (document.querySelector('#PlayerUIAudioPlayPauseButton')?.getAttribute('aria-label') === 'pause') {
+        const firstLine = document.querySelector('.PlayerUIAudio_titleText__HV4Y2')?.textContent ?? ''
+        const secondLine = document.querySelector('.PlayerUIAudio_subtitle__uhGA4')?.textContent ?? ''
+        const duration = document.querySelector('.PlayerUIAudio_duration__n7hxV')?.textContent ?? '0'
 
-      /* RADIO LIVE FEED
+        /* RADIO LIVE FEED
 
-      Direct radios are in the same place as podcasts, and play in the same audio player.
-      The only difference is in the duration field, which is equal to “direct”, or the back to direct button if in deferred mode. */
-      if (duration === 'DIRECT' || exist('#PlayerUIAudioGoToLiveButton')) {
-        const channelName = (firstLine.includes(' - ') ? firstLine.split(' - ')[0] : firstLine.match(/^\w+/)?.[0])!
-        const coverArt = decodeURIComponent(
-          document.querySelector('.PlayerUIAudio_logoContainer__6ffGY > span > img')?.getAttribute('src')?.replace('/_next/image?url=', '').split('&w')[0] ?? '',
-        )
+        Direct radios are in the same place as podcasts, and play in the same audio player.
+        The only difference is in the duration field, which is equal to “direct”, or the back to direct button if in deferred mode. */
+        if (duration === 'DIRECT' || exist('#PlayerUIAudioGoToLiveButton')) {
+          const channelName = (firstLine.includes(' - ') ? firstLine.split(' - ')[0] : firstLine.match(/^\w+/)?.[0])!
+          const coverArt = decodeURIComponent(
+            document.querySelector('.PlayerUIAudio_logoContainer__6ffGY > span > img')?.getAttribute('src')?.replace('/_next/image?url=', '').split('&w')[0] ?? '',
+          )
 
-        presenceData.name = usePrivacyMode || !usePresenceName ? strings.aRadio : getChannel(channelName).channel
-        presenceData.type = ActivityType.Listening
+          presenceData.name = usePrivacyMode || !usePresenceName ? strings.aRadio : getChannel(channelName).channel
+          presenceData.type = ActivityType.Listening
 
-        presenceData.smallImageKey = usePrivacyMode
-          ? ActivityAssets.Privacy
-          : ActivityAssets.Listening
-        presenceData.smallImageText = usePrivacyMode
-          ? strings.privatePlay
-          : strings.play
+          presenceData.smallImageKey = usePrivacyMode
+            ? ActivityAssets.Privacy
+            : ActivityAssets.ListeningLive
+          presenceData.smallImageText = usePrivacyMode
+            ? strings.privatePlay
+            : strings.play
 
-        if (usePrivacyMode) {
-          presenceData.details = strings.listeningTo.replace('{0}', ' ').replace('{1}', strings.aRadio)
-        }
-        else if (Date.now() % 2 === 0 || secondLine === '') {
-          /* RADIO SHOW NAME
+          presenceData.startTimestamp = browsingTimestamp
 
-          The first line of the audio player is the name of the program with which it is presented. */
-
-          presenceData.details = firstLine.replace(/\([^()]+\)(?!.*\([^()]+\))/, '').trim() || firstLine
-          presenceData.state = (firstLine.includes(' - ') ? firstLine.split(' - ')[1]!.match(/\(([^()]+)\)(?!.*\([^()]+\))/)?.pop() : '') || ''
-
-          presenceData.largeImageKey = coverArt.includes(
-            'https://ds.static.rtbf.be/default/',
-          ) // Must not match default auvio image https://ds.static.rtbf.be/default/image/770x770/default-auvio_0.jpg
-            ? getChannel(channelName).logo
-            : await getThumbnail(
-              coverArt,
-              cropPreset.squared,
-              getChannel(channelName).color,
-            )
-          presenceData.largeImageText += ' - Radio'
-        }
-        else {
-          /* RADIO SONG NAME
-
-          The second line shows the music currently playing on the radio, with the artist in brackets.
-          Sometimes no music is played and it's just an audio program. */
-
-          if (secondLine.match(/\([^()]+\)(?!.*\([^()]+\))/)) {
-            // If it has parentheses, it's probably a song.
-            presenceData.details = secondLine
-              .replace(/\([^()]+\)(?!.*\([^()]+\))/, '')
-              .trim()
-            presenceData.state = secondLine.match(/\(([^()]+)\)(?!.*\([^()]+\))/)!.pop() || ''
+          if (usePrivacyMode) {
+            presenceData.details = strings.listeningTo.replace('{0}', ' ').replace('{1}', strings.aRadio)
           }
           else {
-            // If it is not, it's probably an audio program
-            presenceData.details = secondLine.length > 30 ? secondLine.slice(0, secondLine.slice(0, 30).lastIndexOf(' ')) : secondLine
-            presenceData.state = secondLine.length > 30 ? secondLine.slice(presenceData.details.length).trim() : ''
+            useSlideshow = true
+            /* RADIO SHOW NAME
+
+            The first line of the audio player is the name of the program with which it is presented. */
+
+            const showData = structuredClone(presenceData) // Deep copy
+
+            showData.details = firstLine.replace(/\([^()]+\)(?!.*\([^()]+\))/, '').trim() || firstLine
+            showData.state = (firstLine.includes(' - ') ? firstLine.split(' - ')[1]!.match(/\(([^()]+)\)(?!.*\([^()]+\))/)?.pop() : '') || ''
+
+            showData.largeImageKey = coverArt.includes(
+              'https://ds.static.rtbf.be/default/',
+            ) // Must not match default auvio image https://ds.static.rtbf.be/default/image/770x770/default-auvio_0.jpg
+              ? getChannel(channelName).logo
+              : await getThumbnail(
+                coverArt,
+                cropPreset.squared,
+                getChannel(channelName).color,
+              )
+            showData.largeImageText += ' - Radio'
+
+            slideshow.addSlide('SHOW', showData, 5000)
+
+            /* RADIO SONG NAME
+
+            The second line shows the music currently playing on the radio, with the artist in brackets.
+            Sometimes no music is played and it's just an audio program. */
+
+            const songData = structuredClone(presenceData) // Deep copy
+
+            if (secondLine.match(/\([^()]+\)(?!.*\([^()]+\))/)) {
+              // If it has parentheses, it's probably a song.
+              songData.details = secondLine
+                .replace(/\([^()]+\)(?!.*\([^()]+\))/, '')
+                .trim()
+              songData.state = secondLine.match(/\(([^()]+)\)(?!.*\([^()]+\))/)!.pop() || strings.live
+            }
+            else {
+              // If it is not, it's probably an audio program
+              songData.details = secondLine.length > 30 ? secondLine.slice(0, secondLine.slice(0, 30).lastIndexOf(' ')) : secondLine
+              songData.state = secondLine.length > 30 ? secondLine.slice(songData.details.length).trim() : ''
+            }
+
+            songData.largeImageKey = firstLine.includes(' - ') ? getChannel(channelName).logo : await getThumbnail(coverArt, cropPreset.squared, getChannel(channelName).color)
+            songData.largeImageText += ' - Radio'
+
+            slideshow.addSlide('SONG', songData, 5000)
           }
-
-          presenceData.largeImageKey = firstLine.includes(' - ') ? getChannel(channelName).logo : await getThumbnail(coverArt, cropPreset.squared, getChannel(channelName).color)
-          presenceData.largeImageText += ' - Radio'
         }
-      }
-      else {
-        /* VOD PODCAST
+        else {
+          /* VOD PODCAST
 
-        Podcasts can be original programs or past broadcasts. */
-        presenceData.name = usePresenceName && !usePrivacyMode ? firstLine : strings.aPodcast
-        presenceData.type = ActivityType.Listening
+          Podcasts can be original programs or past broadcasts. */
 
-        presenceData.details = !usePrivacyMode
-          ? firstLine
-          : strings.listeningTo.replace('{0}', ' ').replace('{1}', strings.aPodcast)
+          presenceData.name = usePresenceName && !usePrivacyMode ? firstLine : strings.aPodcast
+          presenceData.type = ActivityType.Listening
 
-        presenceData.state = !usePrivacyMode ? secondLine : ''
+          presenceData.details = !usePrivacyMode
+            ? firstLine
+            : strings.listeningTo.replace('{0}', ' ').replace('{1}', strings.aPodcast)
 
-        presenceData.smallImageKey = usePrivacyMode
-          ? ActivityAssets.Privacy
-          : ActivityAssets.Listening
-        presenceData.smallImageText = usePrivacyMode
-          ? strings.privatePlay
-          : strings.play
+          presenceData.state = !usePrivacyMode ? secondLine : ''
 
-        if (usePoster) {
-          /* const progress =
-presence.timestampFromFormat(duration.split("/")[0]) /
-presence.timestampFromFormat(duration.split("/")[1]); */
+          presenceData.smallImageKey = usePrivacyMode
+            ? ActivityAssets.Privacy
+            : ActivityAssets.ListeningVOD
+          presenceData.smallImageText = usePrivacyMode
+            ? strings.privatePlay
+            : strings.play;
 
-          presenceData.largeImageKey = await getThumbnail(
-            decodeURIComponent(
-              // the url is a weird relative encoded link
-              document.querySelector('.PlayerUIAudio_logoContainer__6ffGY > span > img')!.getAttribute('src')!.replace('/_next/image?url=', '').split('&w')[0]!,
-            ),
-            cropPreset.squared,
-            getChannel('default').color,
+          [presenceData.startTimestamp, presenceData.endTimestamp] = getTimestamps(
+            timestampFromFormat(duration.split('/')?.[0] ?? duration),
+            timestampFromFormat(duration.split('/')?.[1] ?? duration),
           )
+
+          if (usePoster) {
+            presenceData.largeImageKey = await getThumbnail(
+              decodeURIComponent(
+                // the url is a weird relative encoded link
+                document.querySelector('.PlayerUIAudio_logoContainer__6ffGY > span > img')!.getAttribute('src')!.replace('/_next/image?url=', '').split('&w')[0]!,
+              ),
+              cropPreset.squared,
+              getChannel('default').color,
+            )
+          }
+          if (!usePrivacyMode)
+            presenceData.largeImageText += ' - Podcasts'
         }
-        if (!usePrivacyMode)
-          presenceData.largeImageText += ' - Podcasts'
       }
       break
     }
     /* HOME PAGE, CATEGORY & CHANNEL PAGE
 
-to do:
-- color outline per categories
+    (ex: https://auvio.rtbf.be/categorie/sport-9 or https://auvio.rtbf.be/chaine/la-une-1) */
 
-(ex: https://auvio.rtbf.be/categorie/sport-9 or https://auvio.rtbf.be/chaine/la-une-1) */
-    case [
-      'categorie',
-      'direct', // Considered as category
-      'podcasts', // Considered as category
-      'kids', // Considered as category
-      'mon-auvio',
-      'chaine',
-      'mot-cle',
-      'premium',
-    ].includes(pathParts[1]!) || pathname === '/': {
+    case pathname === '/' // Homepage
+      || [
+        'categorie',
+        'direct', // Considered as a category
+        'podcasts', // Considered as a category
+        'kids', // Considered as a category
+        'mon-auvio',
+        'chaine',
+        'mot-cle',
+        'premium',
+      ].includes(pathParts[1]!): {
       presenceData.details = strings.browsing
 
       presenceData.smallImageKey = ActivityAssets.Binoculars
@@ -209,7 +223,9 @@ to do:
       }
       else {
         // CATEGORY AND CHANNEL PAGE
-        const categoryTitle = document.querySelector('h1')!.textContent!
+        const categoryTitle = document.querySelector('h1')!.textContent!.length < 20 // Sometimes the title is way too long
+          ? document.querySelector('h1')!.textContent!
+          : document.querySelector('li:nth-last-child() > span')!.textContent! // Last of breadcrumb list
 
         presenceData.details = pathParts[1] === 'podcasts' ? `${categoryTitle} & Radios` : categoryTitle
 
@@ -224,6 +240,7 @@ to do:
         presenceData.largeImageText = `Catégorie ${categoryTitle} sur Auvio`
 
         if (usePoster) {
+          useSlideshow = true
           const selector = exist('img.TileProgramPoster_hoverPicture__v5RJX')
             ? 'img.TileProgramPoster_hoverPicture__v5RJX' // If programs cover art are in portrait
             : 'img.TileMedia_hoverPicture__RGh_m' // If programs cover art are in landscape
@@ -250,7 +267,9 @@ to do:
                 colorsMap.get(categoryTitle.toLowerCase().replace(/[éè]/g, 'e')) || colorsMap.get(''),
               )
               if (mediaTitle !== index.toString()) {
-                const temp = strings.on.replace('{1}', pathParts[1]!.includes('chaine') ? categoryTitle : 'Auvio')
+                // const temp = strings.on.replace('{1}', pathParts[1]!.includes('chaine') ? categoryTitle : 'Auvio')
+                const temp = '{0} on {1}'.replace('{1}', pathParts[1]!.includes('chaine') ? categoryTitle : 'Auvio') // Delete this
+
                 tempData.largeImageText = tempData.state = temp.replace('{0}', limitText(mediaTitle, 128 - temp.length))
               }
               slideshow.addSlide(mediaTitle, tempData, 5000)
@@ -310,7 +329,6 @@ to do:
       break
     }
     case ['media', 'live', 'emission'].includes(pathParts[1]!): {
-      let breadcrumbData, mediaData
       if (usePrivacyMode) {
         if (!exist('#player')) {
           presenceData.details = strings.browsing
@@ -336,6 +354,8 @@ to do:
       }
       else {
         // Retrieving JSON
+        let breadcrumbData: { itemListElement: { name: string }[] } | undefined
+        let mediaData: any
 
         for (
           let i = 0;
@@ -345,57 +365,73 @@ to do:
           i++
         ) {
           const data = JSON.parse(
-            document.querySelectorAll('script[type=\'application/ld+json\']')[i]!.textContent!,
+            document.querySelectorAll('script[type=\'application/ld+json\']')[i]?.textContent ?? '{}',
           )
           if (['BreadcrumbList'].includes(data['@type']))
-            breadcrumbData = data
-          if (['Movie', 'Episode', 'BroadcastEvent'].includes(data['@type']))
+            breadcrumbData = data as { itemListElement: { name: string }[] }
+          if (['Movie', 'Episode', 'BroadcastEvent', 'VideoObject'].includes(data['@type']))
             mediaData = data
-        }
-
-        /* Processing title */
-        title = document.querySelectorAll('div.DetailsTitle_title__mdRHD')[document.querySelectorAll('div.DetailsTitle_title__mdRHD').length - 1]!.textContent!
-        if (exist('div.DetailsTitle_subtitle__D30rn')) {
-          title = title.replace(document.querySelectorAll('div.DetailsTitle_subtitle__D30rn')[document.querySelectorAll('div.DetailsTitle_subtitle__D30rn').length - 1]!.textContent!, '') // Subtitle is nested in the same div as the title..
-          if (
-            title.toLowerCase()
-            === breadcrumbData.itemListElement[
-              breadcrumbData.itemListElement.length - 1
-            ].name.toLowerCase()
-          ) {
-            // If so, it means that the title is more like a topic and the subtitle is more relevant is this case
-            title = document.querySelectorAll('div.DetailsTitle_subtitle__D30rn')[document.querySelectorAll('div.DetailsTitle_subtitle__D30rn')!.length - 1]!.textContent!
-          }
         }
 
         const bChannelCategoryShown = document.querySelectorAll('.DetailsTitle_channelCategory__vh_cY > p').length > 1
         const channelCategory = (bChannelCategoryShown ? document.querySelectorAll('.DetailsTitle_channelCategory__vh_cY > p')[0]!.textContent : 'default')!
+        const durationElement = document.querySelector('p.PictoBar_text__0Y_kv')
+
+        if (usePoster) {
+          const mediaImage = mediaData?.image || mediaData?.thumbnailUrl || mediaData?.broadcastOfEvent?.image?.url
+          if (mediaImage) {
+            presenceData.largeImageKey = await getThumbnail(
+              mediaImage,
+              cropPreset.horizontal,
+              getChannel(channelCategory).color,
+            )
+          }
+        }
 
         if (!exist('#player')) {
+          const titleElements = document.querySelectorAll('div.DetailsTitle_title__mdRHD')
+          title = titleElements.length > 0 ? titleElements[titleElements.length - 1]?.textContent?.trim() ?? strings.browsing : strings.browsing
+
+          const subtitleElements = document.querySelectorAll('div.DetailsTitle_subtitle__D30rn')
+          if (subtitleElements.length > 0) {
+            const lastSubtitle = subtitleElements[subtitleElements.length - 1]?.textContent?.trim()
+            if (lastSubtitle) {
+              title = title.replace(lastSubtitle, '')
+
+              // Check if title matches the last breadcrumb item (case insensitive)
+              if (
+                breadcrumbData?.itemListElement
+                && breadcrumbData.itemListElement.length > 0
+                && title.toLowerCase() === breadcrumbData.itemListElement[breadcrumbData.itemListElement.length - 1]?.name?.toLowerCase()
+              ) {
+                title = lastSubtitle // Subtitle is more relevant in this case
+              }
+            }
+          }
+
           /* MEDIA PAGE */
-          subtitle = bChannelCategoryShown ? `${channelCategory} - ` : ''
-          subtitle += document.querySelector('p.PictoBar_text__0Y_kv') ? document.querySelector('p.PictoBar_text__0Y_kv')!.textContent : '' // Get Duration
-          if (breadcrumbData) {
+          let subtitle = bChannelCategoryShown ? `${channelCategory} - ` : ''
+          subtitle += durationElement ? durationElement.textContent?.trim() ?? '' : ''
+
+          if (breadcrumbData?.itemListElement) {
             for (let i = 1; i < breadcrumbData.itemListElement.length; i++) {
               // Get Genres
-              if (breadcrumbData.itemListElement[i].name !== title) {
-                subtitle += ` - ${breadcrumbData.itemListElement[
-                  i
-                ].name.replace(/s$/i, '')}`
+              const genreName = breadcrumbData.itemListElement[i]?.name?.trim()
+              if (genreName && genreName !== title) {
+                subtitle += ` - ${genreName.replace(/s$/i, '')}` // Remove trailing 's'
               }
             }
           }
 
           if (['live'].includes(pathParts[1]!)) {
-            category = 'direct'
             if (exist('.LiveCountdown_container__zxHMI')) {
               const countdown = exist('.LiveCountdown_countdown__vevrl')
-                ? document.querySelector('.LiveCountdown_countdown__vevrl')!.textContent
+                ? document.querySelector('.LiveCountdown_countdown__vevrl')!.textContent!
                 : ''
               presenceData.details = title
 
               if (Date.now() % 2 === 0 && exist('.PictoBar_soon__g_vHQ')) {
-                presenceData.state = `${strings.startsIn} ${countdown}`
+                presenceData.state = strings.startsIn.replace('{0}', countdown)
               }
               else {
                 presenceData.state = document.querySelector('.PictoBar_soon__g_vHQ')!.textContent!.replace('|', '')
@@ -420,69 +456,29 @@ to do:
             presenceData.smallImageText = strings.browsing
           }
 
-          if (usePoster) {
-            presenceData.largeImageKey = await getThumbnail(
-              mediaData.image || mediaData.broadcastOfEvent.image.url,
-              cropPreset.horizontal,
-              getChannel(channelCategory).color,
-            )
+          if (breadcrumbData?.itemListElement?.length) {
+            presenceData.largeImageText = breadcrumbData.itemListElement.at(-1)?.name ?? ''
           }
-
-          presenceData.largeImageText = breadcrumbData
-            ? breadcrumbData.itemListElement[
-              breadcrumbData.itemListElement.length - 1
-            ].name
-            : ''
+          else {
+            presenceData.largeImageText = ''
+          }
         }
         else {
           /* MEDIA PLAYER PAGE */
-          if (document.querySelector('#ui-wrapper > div')) {
-            // Update the variables only if the overlay is visible and the elements are found
-            title = document.querySelector('.TitleDetails_title__vsoUq')?.textContent || title
-            subtitle = document.querySelector('.TitleDetails_subtitle__y1v4e')?.textContent || subtitle
-            category = document.querySelector('.TitleDetails_category__Azvos')?.textContent || category
-          }
 
-          const video = document.querySelectorAll(
-            'div.redbee-player-media-container > video',
-          )[
-            document.querySelectorAll(
-              'div.redbee-player-media-container > video',
-            ).length - 1
-          ] as HTMLVideoElement
-          // let progress = video.currentTime / video.duration;
+          // Update the variables only if the overlay is visible and the elements are found
+          title = document.querySelector('.TitleDetails_title__vsoUq')?.textContent ?? title
+          subtitle = document.querySelector('.TitleDetails_subtitle__y1v4e')?.textContent ?? subtitle
+          category = document.querySelector('.TitleDetails_category__Azvos')?.textContent ?? category
+
+          const videoArray = document.querySelectorAll('div.redbee-player-media-container > video')
+          const video = videoArray[videoArray.length - 1] as HTMLVideoElement
 
           if (usePresenceName)
             presenceData.name = title
 
-          if (useTimestamps) {
-            if (video.paused) {
-              presenceData.startTimestamp = browsingTimestamp
-              delete presenceData.endTimestamp
-            }
-            else {
-              presenceData.startTimestamp = adjustTimeError(
-                getTimestampsFromMedia(video)[0],
-                5,
-              )
-              presenceData.endTimestamp = adjustTimeError(
-                getTimestampsFromMedia(video)[1],
-                5,
-              )
-            }
-          }
-
           /* LIVE VIDEO PLAYER */
           if (['live'].includes(pathParts[1]!)) {
-            /* progress =
-          parseFloat(
-          (
-              document.querySelector(
-                ".PlayerUITimebar_timebarNow__HoN7c"
-              ) as HTMLElement
-            ).style.width.replace("%", "")
-          ) / 100; */
-
             presenceData.details = title
 
             if (Date.now() % 2 === 0) {
@@ -494,62 +490,69 @@ to do:
               presenceData.state = subtitle
             }
 
-            /* if (
-            document.querySelector(".sas-ctrl-countdown").textContent !== ""
-          ) {
-            presenceData.smallImageKey = getLocalizedAssets(lang, "Ad");
-            presenceData.smallImageText = strings.watchingAd;
-          } else */ if (['direct'].includes(category.toLowerCase())) {
-              presenceData.smallImageKey = video.played
-                ? Assets.Live
+            if (['direct'].includes(category!.toLowerCase())) {
+              presenceData.smallImageKey = !video.paused
+                ? ActivityAssets.LiveAnimated
                 : Assets.Pause
-              presenceData.smallImageText = video.played
+              presenceData.smallImageText = !video.paused
                 ? strings.live
                 : strings.pause
             }
-            else if (category.toLowerCase() === 'en différé') {
-              presenceData.smallImageKey = video.played
-                ? ActivityAssets.Deffered
+            else if (category!.toLowerCase() === 'en différé') {
+              presenceData.smallImageKey = !video.paused
+                ? ActivityAssets.Deferred
                 : Assets.Pause
+              presenceData.smallImageText = !video.paused
+                ? strings.deferred
+                : strings.pause
             }
-            presenceData.smallImageText = video.played
-              ? strings.deferred
-              : strings.pause
 
-            /* VOD VIDEO PLAYER */
+            if (useTimestamps) {
+              if (video.paused) {
+                presenceData.startTimestamp = browsingTimestamp
+                delete presenceData.endTimestamp
+              }
+              else {
+                presenceData.startTimestamp = browsingTimestamp
+                presenceData.endTimestamp = browsingTimestamp + 6000
+              }
+            }
           }
           else {
+            /* VOD VIDEO PLAYER */
             presenceData.details = title
             presenceData.state = bChannelCategoryShown
               ? `${channelCategory} - ${subtitle}`
               : subtitle
 
-            /* if (
-            document.querySelector(".sas-ctrl-countdown")?.textContent !== ""
-          ) {
-            presenceData.smallImageKey = getLocalizedAssets(lang, "Ad");
-            presenceData.smallImageText = strings.watchingAd;
-          } else { */
-            presenceData.smallImageKey = video.played
-              ? Assets.Play
-              : Assets.Pause
-            presenceData.smallImageText = video.played
-              ? strings.play
-              : strings.pause
-            // }
+            if (document.querySelector('.sas-ctrl-countdown')?.textContent !== '') {
+              presenceData.smallImageText = strings.ad
+              presenceData.smallImageKey = getLocalizedAssets(newLang, 'Ad')
+            }
+            else {
+              presenceData.smallImageKey = !video.paused
+                ? Assets.Play
+                : Assets.Pause
+              presenceData.smallImageText = !video.paused
+                ? strings.play
+                : strings.pause
+            }
+
+            if (useTimestamps) {
+              if (video.paused) {
+                presenceData.startTimestamp = browsingTimestamp
+                delete presenceData.endTimestamp
+              }
+              else {
+                presenceData.startTimestamp = getTimestampsFromMedia(video)[0]
+                presenceData.endTimestamp = getTimestampsFromMedia(video)[1]
+              }
+            }
           }
 
-          if (usePoster) {
-            presenceData.largeImageKey = await getThumbnail(
-              mediaData.image || mediaData.broadcastOfEvent.image.url,
-              cropPreset.horizontal,
-              getChannel(channelCategory).color,
-            )
-          }
-          presenceData.largeImageText += document.querySelector(
-            'div.DetailsTitle_channelCategory__vh_cY',
-          )
-            ? ` - ${document.querySelector('div.DetailsTitle_channelCategory__vh_cY')!.textContent}`
+          const channelCategoryElement = document.querySelector('div.DetailsTitle_channelCategory__vh_cY')
+          presenceData.largeImageText += channelCategoryElement
+            ? ` - ${channelCategoryElement.textContent?.trim() ?? ''}`
             : ''
         }
       }
@@ -578,8 +581,7 @@ to do:
 
   if ((!useButtons || usePrivacyMode) && presenceData.buttons)
     delete presenceData.buttons
-
-  if (slideshow.getSlides().length > 0) {
+  if (useSlideshow) {
     presence.setActivity(slideshow)
   }
   else if (presenceData.details) {

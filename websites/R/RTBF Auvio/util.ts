@@ -34,6 +34,7 @@ export const stringMap = {
   waitingLive: 'general.waitingLive',
   waitingLiveThe: 'general.waitingLiveThe',
   home: 'twitch.home',
+  ad: 'youtube.ad',
   // Custom strings
   deferred: 'RTBFAuvio.deferred',
   aPodcast: 'RTBFAuvio.aPodcast',
@@ -180,14 +181,19 @@ export enum ActivityAssets { // Other default assets can be found at index.d.ts
   Logo = 'https://i.imgur.com/m2gRowq.png',
   Animated = '',
   Auvio = 'https://imgur.com/Ky3l5MZ.png',
-  Deffered = 'https://imgur.com/cA3mQhL.gif',
-  Waiting = 'https://imgur.com/KULD0Ja.png',
-  Listening = 'https://imgur.com/FppuGVE.png',
   Binoculars = 'https://imgur.com/aF3TWVK.png',
   Privacy = 'https://imgur.com/nokHvhE.png',
+  Waiting = 'https://imgur.com/KULD0Ja.png',
+  // Media
+  ListeningPaused = 'https://imgur.com/6qvsVLa.png',
+  ListeningVOD = 'https://imgur.com/m4YOJuH.gif',
+  ListeningLive = 'https://imgur.com/8nd4UdO.gif',
+  Deferred = 'https://imgur.com/cA3mQhL.gif',
   LiveAnimated = 'https://imgur.com/oBXFRPE.gif',
+  // Localized
   AdEn = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/4.png',
   AdFr = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/5.png',
+  // Channels
   LaUne = 'https://imgur.com/tmFLVEZ.png',
   Tipik = 'https://imgur.com/w7nj6WR.png',
   LaTrois = 'https://imgur.com/7VaOFVk.png',
@@ -249,24 +255,17 @@ export function limitText(input: string, maxLength = 128): string {
   return truncated + ellipsis
 }
 
-// Copy of the function in Youtube utils
-let cachedTime = 0
-export function adjustTimeError(time: number, acceptableError: number): number {
-  if (Math.abs(time - cachedTime) > acceptableError)
-    cachedTime = time
-  return cachedTime
-}
-
 export const colorsMap = new Map<string, string | number[][]>([
 /* Plain color in hexadecimal ex: #ffaa00
 Gradient colors in RGB ex: [R, G, B, GradientOffset] */
   // Default colors
   ['', '#ffcc00'],
+  ['default', '#ffcc00'],
   // Category colors
-  ['séries', '#b92561'],
+  ['series', '#b92561'],
   ['films', '#7e55a5'],
   [
-    'animés',
+    'animes',
     [
       [255, 226, 63, 0.2],
       [255, 9, 119, 0.5],
@@ -298,12 +297,13 @@ Gradient colors in RGB ex: [R, G, B, GradientOffset] */
       [68, 37, 128, 0.8],
     ],
   ],
-  ['décodage médias', '#b26e38'],
+  ['decodage médias', '#b26e38'],
   ['archives sonuma', '#663c2a'],
   ['direct', '#e55232'],
   // Channel colors
   ['la une', '#ee372b'],
   ['tipik', '#0df160'],
+  ['la deux', '#ec088f'],
   ['la trois', '#9b49a1'],
   ['classic 21', '#8c408a'],
   ['la premiere', '#083e7a'],
@@ -322,7 +322,7 @@ interface ChannelInfo {
 }
 
 export function getChannel(channel: string): ChannelInfo {
-  channel = channel.toLowerCase().replace(/[éè]/g, 'e')
+  channel = channel.toLowerCase().replace(/[éè]/g, 'e').replace('-', ' ')
   switch (true) {
     case ['la une', 'laune'].includes(channel): {
       return {
