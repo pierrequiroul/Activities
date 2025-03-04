@@ -378,6 +378,7 @@ presence.on('UpdateData', async () => {
 
           const videoArray = document.querySelectorAll('div.redbee-player-media-container > video')
           const video = videoArray[videoArray.length - 1] as HTMLVideoElement
+          const adCountdownElement = document.querySelector('.sas-ctrl-countdown')
 
           // LIVE VIDEO PLAYER
           if (['live'].includes(pathParts[1]!)) {
@@ -390,7 +391,11 @@ presence.on('UpdateData', async () => {
             presenceData.state = subtitle
 
             // PLAYER STATUS
-            if (['direct'].includes(category!.toLowerCase())) {
+            if (adCountdownElement && adCountdownElement.textContent !== '') {
+              presenceData.smallImageText = strings.ad
+              presenceData.smallImageKey = getLocalizedAssets(newLang, 'Ad')
+            }
+            else if (['direct'].includes(category!.toLowerCase())) {
               presenceData.smallImageKey = !video.paused
                 ? ActivityAssets.LiveAnimated
                 : Assets.Pause
@@ -407,7 +412,7 @@ presence.on('UpdateData', async () => {
                 : strings.pause
             }
 
-            if (document.querySelector('.sas-ctrl-countdown')) {
+            if (adCountdownElement && adCountdownElement.textContent !== '') {
               presenceData.smallImageText = strings.ad
               presenceData.smallImageKey = getLocalizedAssets(newLang, 'Ad')
             }
@@ -416,25 +421,28 @@ presence.on('UpdateData', async () => {
               delete presenceData.endTimestamp
             }
             else {
-              startLiveTimebar = document.querySelector('PlayerUITimebar_textLeft__5bfI_')?.textContent ?? startLiveTimebar
-              endLiveTimebar = document.querySelector('PlayerUITimebar_textRight__Qd04m')?.textContent ?? endLiveTimebar
+              startLiveTimebar = document.querySelector('.PlayerUITimebar_textLeft__5bfI_')?.textContent ?? startLiveTimebar
+              endLiveTimebar = document.querySelector('.PlayerUITimebar_textRight__Qd04m')?.textContent ?? endLiveTimebar
 
               const startTimeSec = timestampFromFormat(`${startLiveTimebar.replace('h', ':')}:00`)
               const endTimeSec = timestampFromFormat(`${endLiveTimebar.replace('h', ':')}:00`)
 
-              if (startTimeSec > endTimeSec) {
-                presenceData.startTimestamp = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000) + startTimeSec
-                presenceData.endTimestamp = Math.floor(new Date().setHours(24, 0, 0, 0) / 1000) + endTimeSec
+              /* if (startTimeSec > endTimeSec) {
+                [presenceData.startTimestamp, presenceData.endTimestamp] = getTimestamps(
+                  Math.floor(new Date().setHours(0, 0, 0, 0) / 1000),
+                  Math.floor(new Date().setHours(0, 0, 0, 0) / 1000) + 86400 + endTimeSec,
+                )
               }
-              else {
-                presenceData.startTimestamp = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000) + startTimeSec
-                presenceData.endTimestamp = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000) + endTimeSec
-              }
-              console.warn(presenceData.startTimestamp)
+              else { */
+              presenceData.startTimestamp = browsingTimestamp// Math.floor((new Date().setHours(0, 0, 0, 0) / 1000) + startTimeSec)
+              presenceData.endTimestamp = browsingTimestamp + 3600 // Math.floor((new Date().setHours(0, 0, 0, 0) / 1000) + endTimeSec)
+
+              // }
+              presenceData.state = `${presenceData.startTimestamp} ${presenceData.endTimestamp} ${startTimeSec} ${endTimeSec} ${browsingTimestamp}`
             }
 
-            if (subtitle)
-              slideshow.addSlide('TITLE', presenceData, 10000)
+            // if (subtitle)
+            slideshow.addSlide('TITLE', presenceData, 10000)
 
             // SLIDE STATUS
             const statusData = structuredClone(presenceData)
@@ -442,7 +450,7 @@ presence.on('UpdateData', async () => {
               ? strings.on.replace('{0)', strings.watchingLive).replace('{1}', channelCategory)
               : strings.on.replace('{0)', strings.watchingLive).replace('{1}', 'Auvio')
 
-            slideshow.addSlide('STATUS', statusData, 10000)
+            // slideshow.addSlide('STATUS', statusData, 10000)
           }
           else {
             // VOD VIDEO PLAYER
@@ -453,9 +461,9 @@ presence.on('UpdateData', async () => {
             presenceData.state = bChannelCategoryShown
               ? `${channelCategory} - ${subtitle}`
               : subtitle
-
+            presenceData.state = title
             // PLAYER STATUS
-            if (document.querySelector('.sas-ctrl-countdown')?.textContent !== '') {
+            if (adCountdownElement && adCountdownElement.textContent !== '') {
               presenceData.smallImageText = strings.ad
               presenceData.smallImageKey = getLocalizedAssets(newLang, 'Ad')
             }
