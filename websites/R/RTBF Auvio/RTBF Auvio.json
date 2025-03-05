@@ -23,6 +23,14 @@
     "description": "Used when a livestream is about to be launched. {0} is used to write the time before launch.",
     "message": "Starts in {0}"
   },
+  "RTBFAuvio.endsIn": {
+    "description": "Used when a livestream is about to end. {0} is used to write the time before end.",
+    "message": "Ends in {0}"
+  },
+  "RTBFAuvio.liveEnded": {
+    "description": "Used when a livestream is over",
+    "message": "Livestream has ended"
+  },
   "RTBFAuvio.on": {
     "description": "Used to specify that content is on a channel or by default on Auvio. For example \"Iron Man on Auvio\"",
     "message": "{0} on {1}"

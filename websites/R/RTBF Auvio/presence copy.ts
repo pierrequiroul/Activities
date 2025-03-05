@@ -7,6 +7,7 @@ import {
   exist,
   formatDuration,
   getChannel,
+  getLocalizedAssets,
   getSetting,
   getThumbnail,
   limitText,
@@ -18,14 +19,13 @@ const browsingTimestamp = Math.floor(Date.now() / 1000)
 const slideshow = new Slideshow()
 
 let oldPath = document.location.pathname
+let title = ''
+let subtitle = ''
+let category = ''
 let isMediaPage = false
 let isMediaPlayer = false
-/* const title = ''
-const subtitle = ''
-const category = ''
-
-const startLiveTimebar = ''
-const endLiveTimebar = '' */
+let startLiveTimebar = ''
+let endLiveTimebar = ''
 
 presence.on('UpdateData', async () => {
   const { /* hostname, href, */ pathname } = document.location
@@ -41,13 +41,13 @@ presence.on('UpdateData', async () => {
   const [
     newLang,
     usePresenceName,
-    // useChannelName,
+    useChannelName,
     usePrivacyMode,
     usePoster,
   ] = [
     getSetting<string>('lang', 'en'),
     getSetting<boolean>('usePresenceName'),
-    // getSetting<boolean>('useChannelName'),
+    getSetting<boolean>('useChannelName'),
     getSetting<boolean>('usePrivacyMode'),
     getSetting<boolean>('usePoster'),
   ]
@@ -65,7 +65,7 @@ presence.on('UpdateData', async () => {
 
   switch (true) {
     case exist('#audioPlayerContainer'): {
-      /* NOTE: PODCAST PLAYER
+      /* SECTION: PODCAST PLAYER
       NOTE: When a podcast is played, it appears in an audio player at the bottom of the screen.
       Once a podcast has been launched, it is visible at all times throughout the site until the website is refreshed. */
 
@@ -188,8 +188,9 @@ presence.on('UpdateData', async () => {
         }
       }
       break
+      // !SECTION
     }
-    /* NOTE: RESEARCH (Page de recherche)
+    /* SECTION: RESEARCH (Page de recherche)
 
     (https://auvio.rtbf.be/explorer) */
     case ['explorer'].includes(pathParts[1]!): {
@@ -211,9 +212,10 @@ presence.on('UpdateData', async () => {
       presenceData.smallImageText = strings.search
 
       break
+      // !SECTION
     }
 
-    /* NOTE: ACCOUNT & ACCOUNT SETTINGS PAGE
+    /* SECTION: ACCOUNT & ACCOUNT SETTINGS PAGE
 
     (ex: https://auvio.rtbf.be/mes_informations) */
     case [
@@ -236,9 +238,10 @@ presence.on('UpdateData', async () => {
 
       presenceData.largeImageKey = ActivityAssets.Logo
       break
+      // !SECTION
     }
     case ['media', 'live', 'emission'].includes(pathParts[1]!): {
-      // NOTE: MEDIA PAGE
+      // SECTION: MEDIA PAGE
       if (usePrivacyMode) {
         if (!exist('#player')) {
           presenceData.details = strings.browsing
@@ -265,106 +268,233 @@ presence.on('UpdateData', async () => {
       else {
         useSlideshow = true
 
-        // Fetch RTBF API
-        const response = await fetch(`https://bff-service.rtbf.be/auvio/v1.23/pages${pathname}`)
-        const dataString = await response.text()
-        const metadatas = JSON.parse(dataString)
+        // Retrieving JSON
+        let breadcrumbData: { itemListElement: { name: string }[] } | undefined
+        let mediaData: any
 
-        // Populating metadatas variables
-        let waitTime, remainingTime
-        const mediaType = metadatas.data.pageType
-        const title = metadatas.data.content.title
-        const subtitle = metadatas.data.content.subtitle || ''
-        const description = metadatas.data.content.description > 2 ? limitText(metadatas.data.content.description, 128) : 'Auvio'
-        const image = metadatas.data.content.background.m || ActivityAssets.Logo
+        for (
+          let i = 0;
+          i
+          < document.querySelectorAll('script[type=\'application/ld+json\']')
+            .length;
+          i++
+        ) {
+          const data = JSON.parse(
+            document.querySelectorAll('script[type=\'application/ld+json\']')[i]?.textContent ?? '{}',
+          )
+          if (['BreadcrumbList'].includes(data['@type']))
+            breadcrumbData = data as { itemListElement: { name: string }[] }
+          if (['Movie', 'Episode', 'BroadcastEvent', 'VideoObject'].includes(data['@type']))
+            mediaData = data
+        }
 
-        const channel = metadatas.data.content.channel?.label ?? ''
-        const duration = metadatas.data.content.duration ? formatDuration(metadatas.data.content.duration) : ''
-        const category = metadatas.data.content.category?.label ?? ''
+        const channelCategoryElements = document.querySelectorAll('div.DetailsTitle_channelCategory__vh_cY > div')
+        const bChannelCategoryShown = channelCategoryElements.length > 1
+        const channelCategory = channelCategoryElements[0]?.textContent ?? ''
 
-        const scheduledFrom = metadatas.data.content.scheduledFrom || ''
-        const scheduledTo = metadatas.data.content.scheduledTo || ''
-        if (scheduledFrom)
-          waitTime = (new Date(scheduledFrom).getTime() / 1000) - browsingTimestamp
-        if (scheduledTo)
-          remainingTime = (new Date(scheduledTo).getTime() / 1000) - browsingTimestamp
+        if (usePoster) {
+          const mediaImage = mediaData?.image || mediaData?.thumbnailUrl || mediaData?.broadcastOfEvent?.image?.url
+          if (mediaImage) {
+            presenceData.largeImageKey = await getThumbnail(
+              mediaImage,
+              cropPreset.horizontal,
+              getChannel(channelCategory).color,
+            )
+          }
+        }
 
         if (!exist('#player')) {
-          // NOTE: MEDIA PAGE
+          // SECTION: MEDIA PAGE
           isMediaPage = true
           if (isMediaPlayer) {
             slideshow.deleteAllSlides()
             isMediaPlayer = false
           }
 
-          // BASE SLIDES
-          presenceData.details = title
+          const titleElements = document.querySelectorAll('div.DetailsTitle_title__mdRHD')
+          title = titleElements.length > 0 ? titleElements[titleElements.length - 1]?.textContent!.trim() ?? strings.browsing : strings.browsing
 
-          presenceData.largeImageText = description
-          if (usePoster) {
-            presenceData.largeImageKey = await getThumbnail(
-              image,
-              cropPreset.horizontal,
-              colorsMap.get(channel.toLowerCase().replace(/[éè]/g, 'e')),
-            )
-          }
-          else {
-            presenceData.largeImageKey = getChannel(channel).logo // Default logo if not found
-          }
+          const subtitleElements = document.querySelectorAll('div.DetailsTitle_subtitle__D30rn')
+          const subtitle = subtitleElements.length > 0 ? subtitleElements[subtitleElements.length - 1]?.textContent?.trim() ?? '' : ''
+
+          const durationElement = document.querySelector('p.PictoBar_text__0Y_kv')
+          let infos = bChannelCategoryShown ? `${channelCategory} ・` : ''
+          infos += durationElement ? `${durationElement.textContent?.trim() ?? ''} ・` : ''
+          infos += breadcrumbData?.itemListElement ? `${breadcrumbData.itemListElement[1]?.name.replace(/s$/i, '') ?? ''}` : ''
 
           presenceData.smallImageKey = ActivityAssets.Binoculars
           presenceData.smallImageText = strings.browsing
 
-          presenceData.startTimestamp = browsingTimestamp
+          presenceData.details = subtitle ? title.replace(subtitle, '') : title
 
-          // SLIDE: Subtitle
+          // ANCHOR: SLIDE: SUBTITLE
           if (subtitle) {
-            const subtitleData = structuredClone(presenceData)
-            subtitleData.state = subtitle
-            slideshow.addSlide('01', subtitleData, 5000)
+            presenceData.state = subtitle // subtitle
+            slideshow.addSlide('SUBTITLE', presenceData, 10000)
           }
 
-          // SLIDE: Infos
-          if (channel || duration || category) {
-            const infosData = structuredClone(presenceData)
-            infosData.state = [channel, duration, category].filter(Boolean).join(' - ') // "La Une - 51min - Policier"
-            slideshow.addSlide('02', infosData, 5000)
-          }
+          // ANCHOR: SLIDE: METADATAS INFOS
+          const infosData = structuredClone(presenceData)
+          infosData.state = infos
+          slideshow.addSlide('INFOS', infosData, 10000)
 
-          // SLIDE: Livestream Status
-          if (mediaType === 'LIVE') {
-            const scheduleData = structuredClone(presenceData)
-            if ((waitTime || -1) > 0) {
-              scheduleData.state = 'Starts in {0}'.replace('{0}', formatDuration(waitTime!)) // "Starts in 3h41"
-              scheduleData.smallImageKey = ActivityAssets.Waiting
-              scheduleData.smallImageText = strings.waitingLive
+          // ANCHOR: IF IT'S A LIVE MEDIA PAGE
+          const soonElement = document.querySelector('.PictoBar_soon__g_vHQ')
+          const countdownElement = document.querySelector('.LiveCountdown_countdown__vevrl')
+
+          if (['live'].includes(pathParts[1]!) && (soonElement || countdownElement)) {
+            presenceData.smallImageKey = ActivityAssets.Waiting
+            presenceData.smallImageText = strings.waitingLive
+
+            // ANCHOR: SLIDE: SOON TEXT: "Demain à 15h59"
+            if (soonElement) {
+              const soonData = structuredClone(presenceData)
+              soonData.state = soonElement.textContent!.replace('|', '')
+
+              slideshow.addSlide('TIME', soonData, 5000)
             }
-            else if ((remainingTime || -1) > 0) {
-              scheduleData.state = 'Ends in {0}'.replace('{0}', formatDuration(remainingTime!)) // "Ends in 3h41"
-              scheduleData.smallImageKey = ActivityAssets.Deferred
-              scheduleData.smallImageText = strings.browsing
+
+            // ANCHOR: SLIDE: COUNTDOWN: "Retrouvez nous en direct dans XX:XX:XX"
+            if (countdownElement) {
+              const countdownData = structuredClone(presenceData)
+              countdownData.state = strings.startsIn.replace('{0}', formatDuration(countdownElement.textContent!))
+
+              slideshow.addSlide('COUNTDOWN', countdownData, 5000)
             }
-            else {
-              scheduleData.state = strings.liveEnded // "Livestream has ended"
-            }
-            slideshow.addSlide('03', scheduleData, 5000)
           }
+          // !SECTION
         }
         else {
-          // NOTE: MEDIA PLAYER PAGE
+          // SECTION: MEDIA PLAYER PAGE
           isMediaPlayer = true
           if (isMediaPage) {
             slideshow.deleteAllSlides()
             isMediaPage = false
           }
 
-          // const videoArray = document.querySelectorAll('div.redbee-player-media-container > video')
-          // const video = videoArray[videoArray.length - 1] as HTMLVideoElement
+          // Update the variables only if the overlay is visible and the elements are found
+          title = document.querySelector('.TitleDetails_title__vsoUq')?.textContent ?? title
+          subtitle = document.querySelector('.TitleDetails_subtitle__y1v4e')?.textContent ?? subtitle
+          category = document.querySelector('.TitleDetails_category__Azvos')?.textContent ?? category
+
+          const videoArray = document.querySelectorAll('div.redbee-player-media-container > video')
+          const video = videoArray[videoArray.length - 1] as HTMLVideoElement
+          const adCountdownElement = document.querySelector('.sas-ctrl-countdown')
+
+          // SECTION: LIVE VIDEO PLAYER
+          if (['live'].includes(pathParts[1]!)) {
+            if (usePresenceName)
+              presenceData.name = title
+            else if (useChannelName && bChannelCategoryShown)
+              presenceData.name = channelCategory
+
+            presenceData.details = title
+            presenceData.state = subtitle
+
+            // ANCHOR: PLAYER STATUS
+            if (adCountdownElement && adCountdownElement.textContent !== '') {
+              presenceData.smallImageText = strings.ad
+              presenceData.smallImageKey = getLocalizedAssets(newLang, 'Ad')
+            }
+            else if (['direct'].includes(category!.toLowerCase())) {
+              presenceData.smallImageKey = !video.paused
+                ? ActivityAssets.LiveAnimated
+                : Assets.Pause
+              presenceData.smallImageText = !video.paused
+                ? strings.live
+                : strings.pause
+            }
+            else if (category!.toLowerCase() === 'en différé') {
+              presenceData.smallImageKey = !video.paused
+                ? ActivityAssets.Deferred
+                : Assets.Pause
+              presenceData.smallImageText = !video.paused
+                ? strings.deferred
+                : strings.pause
+            }
+
+            if (adCountdownElement && adCountdownElement.textContent !== '') {
+              presenceData.smallImageText = strings.ad
+              presenceData.smallImageKey = getLocalizedAssets(newLang, 'Ad')
+            }
+            else if (video.paused) {
+              presenceData.startTimestamp = browsingTimestamp
+              delete presenceData.endTimestamp
+            }
+            else {
+              startLiveTimebar = document.querySelector('.PlayerUITimebar_textLeft__5bfI_')?.textContent ?? startLiveTimebar
+              endLiveTimebar = document.querySelector('.PlayerUITimebar_textRight__Qd04m')?.textContent ?? endLiveTimebar
+
+              const startTimeSec = timestampFromFormat(`${startLiveTimebar.replace('h', ':')}:00`)
+              const endTimeSec = timestampFromFormat(`${endLiveTimebar.replace('h', ':')}:00`)
+
+              /* if (startTimeSec > endTimeSec) {
+                [presenceData.startTimestamp, presenceData.endTimestamp] = getTimestamps(
+                  Math.floor(new Date().setHours(0, 0, 0, 0) / 1000),
+                  Math.floor(new Date().setHours(0, 0, 0, 0) / 1000) + 86400 + endTimeSec,
+                )
+              }
+              else { */
+              presenceData.startTimestamp = browsingTimestamp// Math.floor((new Date().setHours(0, 0, 0, 0) / 1000) + startTimeSec)
+              presenceData.endTimestamp = browsingTimestamp + 3600 // Math.floor((new Date().setHours(0, 0, 0, 0) / 1000) + endTimeSec)
+
+              // }
+              presenceData.state = `${presenceData.startTimestamp} ${presenceData.endTimestamp} ${startTimeSec} ${endTimeSec} ${browsingTimestamp}`
+            }
+
+            // if (subtitle)
+            slideshow.addSlide('TITLE', presenceData, 10000)
+
+            // ANCHOR: SLIDE STATUS
+            const statusData = structuredClone(presenceData)
+            statusData.state = bChannelCategoryShown
+              ? strings.on.replace('{0)', strings.watchingLive).replace('{1}', channelCategory)
+              : strings.on.replace('{0)', strings.watchingLive).replace('{1}', 'Auvio')
+
+            // slideshow.addSlide('STATUS', statusData, 10000)
+            // !SECTION
+          }
+          else {
+            // SECTION: VOD VIDEO PLAYER
+            if (usePresenceName)
+              presenceData.name = title
+
+            presenceData.details = title
+            presenceData.state = bChannelCategoryShown
+              ? `${channelCategory} - ${subtitle}`
+              : subtitle
+            presenceData.state = title
+            // ANCHOR: PLAYER STATUS
+            /* if (adCountdownElement && adCountdownElement.textContent !== '') {
+              presenceData.smallImageText = strings.ad
+              presenceData.smallImageKey = getLocalizedAssets(newLang, 'Ad')
+            }
+            else { */
+            presenceData.smallImageKey = !video.paused
+              ? Assets.Play
+              : Assets.Pause
+            presenceData.smallImageText = !video.paused
+              ? strings.play
+              : strings.pause
+            // }
+
+            /*
+            if (video.paused) {
+              presenceData.startTimestamp = browsingTimestamp
+              delete presenceData.endTimestamp
+            }
+            else {
+              presenceData.startTimestamp = getTimestampsFromMedia(video)[0]
+              presenceData.endTimestamp = getTimestampsFromMedia(video)[1]
+            } */
+          }
+          // !SECTION
         }
       }
       break
+      // !SECTION
     }
-    /* NOTE: HOME PAGE, CATEGORY & CHANNEL PAGE
+    /* SECTION: HOME PAGE, CATEGORY & CHANNEL PAGE
 
     (ex: https://auvio.rtbf.be/categorie/sport-9 or https://auvio.rtbf.be/chaine/la-une-1) */
 
@@ -447,6 +577,7 @@ presence.on('UpdateData', async () => {
         }
       }
       break
+      // !SECTION
     }
 
     // In case we need a default

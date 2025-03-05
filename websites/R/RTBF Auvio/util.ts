@@ -43,6 +43,8 @@ export const stringMap = {
   toAPodcast: 'RTBFAuvio.toAPodcast',
   privatePlay: 'RTBFAuvio.privatePlay',
   startsIn: 'RTBFAuvio.startsIn',
+  endsIn: 'RTBFAuvio.endsIn',
+  liveEnded: 'RTBFAuvio.liveEnded',
   on: 'RTBFAuvio.on',
 }
 
@@ -188,7 +190,8 @@ export enum ActivityAssets { // Other default assets can be found at index.d.ts
   ListeningPaused = 'https://imgur.com/6qvsVLa.png',
   ListeningVOD = 'https://imgur.com/m4YOJuH.gif',
   ListeningLive = 'https://imgur.com/8nd4UdO.gif',
-  Deferred = 'https://imgur.com/cA3mQhL.gif',
+  Deferred = 'https://i.imgur.com/uvRMlkv.png',
+  DeferredAnimated = 'https://imgur.com/cA3mQhL.gif',
   LiveAnimated = 'https://imgur.com/oBXFRPE.gif',
   // Localized
   AdEn = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/4.png',
@@ -255,13 +258,40 @@ export function limitText(input: string, maxLength = 128): string {
   return truncated + ellipsis
 }
 
-export function formatDuration(time: string) {
-  const [hours, minutes, seconds] = time.split(':').map(Number)
+export function formatDuration(time: string | number) {
+  let totalSeconds: number
 
-  if (hours! > 0) {
-    return minutes! > 0 ? `${hours}h${minutes}` : `${hours}h`
+  if (typeof time === 'string') {
+    const parts = time.split(':').map(Number)
+    if (parts.length !== 3 || parts.some(Number.isNaN)) {
+      throw new Error('Invalid time format. Expected HH:MM:SS')
+    }
+    const [hours, minutes, seconds] = parts
+    totalSeconds = hours! * 3600 + minutes! * 60 + seconds!
   }
-  else if (minutes! > 0) {
+  else if (typeof time === 'number') {
+    totalSeconds = time
+  }
+  else {
+    throw new TypeError('Invalid input. Expected a string or number.')
+  }
+
+  const weeks = Math.floor(totalSeconds / (7 * 24 * 3600))
+  const days = Math.floor((totalSeconds % (7 * 24 * 3600)) / (24 * 3600))
+  const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  if (weeks > 0) {
+    return days > 0 ? `${weeks}s & ${days}j` : `${weeks}s`
+  }
+  else if (days > 0) {
+    return hours > 0 ? `${days}j & ${hours}h` : `${days}d`
+  }
+  else if (hours > 0) {
+    return minutes > 0 ? `${hours}h${minutes < 10 ? `0${minutes}` : minutes}` : `${hours}h`
+  }
+  else if (minutes > 0) {
     return `${minutes} min`
   }
   else {
