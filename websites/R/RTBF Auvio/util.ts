@@ -23,7 +23,9 @@ export const stringMap = {
   // viewSerie: "general.viewSerie",
   // viewShow: "general.viewShow",
   // viewMovie: "general.viewMovie",
-  // buttonViewPage: "general.buttonViewPage",
+  buttonViewPage: 'general.buttonViewPage',
+  buttonWatchVideo: 'general.buttonWatchVideo',
+  buttonWatchStream: 'general.buttonWatchStream',
   // watching: "general.watching",
   watchingAd: 'youtube.ad',
   watchingLive: 'general.watchingLive',
@@ -50,6 +52,7 @@ export const stringMap = {
 
 // eslint-disable-next-line import/no-mutable-exports
 export let strings: Awaited<
+  // eslint-disable-next-line ts/no-deprecated
   ReturnType<typeof presence.getStrings<typeof stringMap>>
 >
 

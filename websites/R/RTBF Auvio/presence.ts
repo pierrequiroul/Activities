@@ -1,4 +1,4 @@
-import { ActivityType, Assets, getTimestamps, timestampFromFormat } from 'premid'
+import { ActivityType, Assets, getTimestamps, getTimestampsFromMedia, timestampFromFormat } from 'premid'
 import {
   ActivityAssets,
   checkStringLanguage,
@@ -20,15 +20,15 @@ const slideshow = new Slideshow()
 let oldPath = document.location.pathname
 let isMediaPage = false
 let isMediaPlayer = false
-/* const title = ''
-const subtitle = ''
-const category = ''
+let title = ''
+let subtitle = ''
+let liveStatus = 'DIRECT'
 
-const startLiveTimebar = ''
+/* const startLiveTimebar = ''
 const endLiveTimebar = '' */
 
 presence.on('UpdateData', async () => {
-  const { /* hostname, href, */ pathname } = document.location
+  const { /* hostname, */ href, pathname } = document.location
   const pathParts = pathname.split('/')
   const presenceData: PresenceData = {
     name: 'Auvio',
@@ -41,15 +41,17 @@ presence.on('UpdateData', async () => {
   const [
     newLang,
     usePresenceName,
-    // useChannelName,
+    useChannelName,
     usePrivacyMode,
     usePoster,
+    useButtons,
   ] = [
     getSetting<string>('lang', 'en'),
     getSetting<boolean>('usePresenceName'),
-    // getSetting<boolean>('useChannelName'),
+    getSetting<boolean>('useChannelName'),
     getSetting<boolean>('usePrivacyMode'),
     getSetting<boolean>('usePoster'),
+    getSetting<number>('useButtons'),
   ]
 
   // Update strings if user selected another language.
@@ -273,21 +275,55 @@ presence.on('UpdateData', async () => {
         // Populating metadatas variables
         let waitTime, remainingTime
         const mediaType = metadatas.data.pageType
-        const title = metadatas.data.content.title
-        const subtitle = metadatas.data.content.subtitle || ''
-        const description = metadatas.data.content.description > 2 ? limitText(metadatas.data.content.description, 128) : 'Auvio'
-        const image = metadatas.data.content.background.m || ActivityAssets.Logo
+          ?? metadatas.data.content?.pageType
+          ?? ''
 
-        const channel = metadatas.data.content.channel?.label ?? ''
-        const duration = metadatas.data.content.duration ? formatDuration(metadatas.data.content.duration) : ''
-        const category = metadatas.data.content.category?.label ?? ''
+        let title = metadatas.data.content?.title ?? 'Auvio'
+        let subtitle = metadatas.data.content?.subtitle
+          ?? metadatas.data.content?.media?.subtitle
+          ?? ''
 
-        const scheduledFrom = metadatas.data.content.scheduledFrom || ''
-        const scheduledTo = metadatas.data.content.scheduledTo || ''
-        if (scheduledFrom)
+        if (title === subtitle)
+          subtitle = ''
+
+        if (!subtitle) {
+          const titleParts = title.split(' - ')
+          if (titleParts.length > 1) {
+            subtitle = titleParts[1] ?? ''
+            title = title.replace(subtitle, '').trim()
+          }
+        }
+
+        const description = metadatas.data.content?.description?.length > 2
+          ? limitText(metadatas.data.content.description, 128)
+          : metadatas.data.content?.media?.description?.length > 2
+            ? limitText(metadatas.data.content.media.description, 128)
+            : 'Auvio'
+
+        const image = metadatas.data.content?.background?.m ?? ActivityAssets.Logo
+
+        const channel = metadatas.data.content?.channel?.label
+          ?? metadatas.data.content?.media?.channelLabel
+          ?? ''
+
+        const duration = metadatas.data.content?.duration
+          ? formatDuration(metadatas.data.content.duration)
+          : metadatas.data.content?.media?.duration
+            ? formatDuration(metadatas.data.content.media.duration)
+            : ''
+
+        const category = metadatas.data.content?.category?.label ?? ''
+
+        const scheduledFrom = metadatas.data.content?.scheduledFrom ?? ''
+        const scheduledTo = metadatas.data.content?.scheduledTo ?? ''
+
+        if (scheduledFrom) {
           waitTime = (new Date(scheduledFrom).getTime() / 1000) - browsingTimestamp
-        if (scheduledTo)
+        }
+
+        if (scheduledTo) {
           remainingTime = (new Date(scheduledTo).getTime() / 1000) - browsingTimestamp
+        }
 
         if (!exist('#player')) {
           // NOTE: MEDIA PAGE
@@ -310,6 +346,15 @@ presence.on('UpdateData', async () => {
           }
           else {
             presenceData.largeImageKey = getChannel(channel).logo // Default logo if not found
+          }
+
+          if (useButtons) {
+            presenceData.buttons = [
+              {
+                label: strings.buttonViewPage,
+                url: href,
+              },
+            ]
           }
 
           presenceData.smallImageKey = ActivityAssets.Binoculars
@@ -358,8 +403,104 @@ presence.on('UpdateData', async () => {
             isMediaPage = false
           }
 
-          // const videoArray = document.querySelectorAll('div.redbee-player-media-container > video')
-          // const video = videoArray[videoArray.length - 1] as HTMLVideoElement
+          // Update the variables only if the overlay is visible and the elements are found
+          title = document.querySelector('.TitleDetails_title__vsoUq')?.textContent ?? title
+          subtitle = document.querySelector('.TitleDetails_subtitle__y1v4e')?.textContent ?? subtitle
+          // liveStatus = document.querySelector('.TitleDetails_directBall__M_Kac')?.textContent ?? liveStatus
+
+          const videoArray = document.querySelectorAll('div.redbee-player-media-container > video')
+          const video = videoArray[videoArray.length - 1] as HTMLVideoElement
+
+          // BASE SLIDES
+          if (usePresenceName)
+            presenceData.name = title
+
+          presenceData.details = title
+
+          presenceData.largeImageText = description
+          if (usePoster) {
+            presenceData.largeImageKey = await getThumbnail(
+              image,
+              cropPreset.horizontal,
+              colorsMap.get(channel.toLowerCase().replace(/[éè]/g, 'e')),
+            )
+          }
+          else {
+            presenceData.largeImageKey = getChannel(channel).logo // Default logo if not found
+          }
+
+          if (mediaType === 'LIVE') {
+            if (usePresenceName && useChannelName && channel !== '')
+              presenceData.name = channel
+
+            if (useButtons) {
+              presenceData.buttons = [
+                {
+                  label: strings.buttonWatchStream,
+                  url: href,
+                },
+              ]
+            }
+
+            if (liveStatus.toLowerCase() === 'direct') { // Live
+              presenceData.smallImageKey = !video.paused
+                ? ActivityAssets.LiveAnimated
+                : Assets.Pause
+              presenceData.smallImageText = !video.paused
+                ? strings.live
+                : strings.pause
+
+              presenceData.startTimestamp = (new Date(scheduledFrom).getTime() / 1000)
+              presenceData.endTimestamp = (new Date(scheduledTo).getTime() / 1000)
+            }
+            else { // Deferred
+              presenceData.smallImageKey = !video.paused
+                ? ActivityAssets.Deferred
+                : Assets.Pause
+              presenceData.smallImageText = !video.paused
+                ? strings.deferred
+                : strings.pause
+            }
+          }
+          else {
+            if (useButtons) {
+              presenceData.buttons = [
+                {
+                  label: strings.buttonWatchVideo,
+                  url: href,
+                },
+              ]
+            }
+
+            if (video.paused) {
+              presenceData.smallImageKey = Assets.Pause
+              presenceData.smallImageText = strings.pause
+
+              presenceData.startTimestamp = browsingTimestamp
+              delete presenceData.endTimestamp
+            }
+            else {
+              presenceData.smallImageKey = Assets.Play
+              presenceData.smallImageText = strings.play
+
+              presenceData.startTimestamp = getTimestampsFromMedia(video)[0]
+              presenceData.endTimestamp = getTimestampsFromMedia(video)[1]
+            }
+          }
+
+          // SLIDE: Subtitle
+          if (subtitle) {
+            const subtitleData = structuredClone(presenceData)
+            subtitleData.state = subtitle
+            slideshow.addSlide('01', subtitleData, 5000)
+          }
+
+          // SLIDE: Infos
+          if (channel || duration || category) {
+            const infosData = structuredClone(presenceData)
+            infosData.state = [channel, duration, category].filter(Boolean).join(' - ') // "La Une - 51min - Policier"
+            slideshow.addSlide('02', infosData, 5000)
+          }
         }
       }
       break
@@ -457,12 +598,6 @@ presence.on('UpdateData', async () => {
     }
   }
 
-  if (
-    (presenceData.startTimestamp || presenceData.endTimestamp)
-  ) {
-    delete presenceData.startTimestamp
-    delete presenceData.endTimestamp
-  }
   if (presenceData.details === '')
     delete presenceData.details
   if (presenceData.state === '')
