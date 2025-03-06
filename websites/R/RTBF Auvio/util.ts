@@ -38,21 +38,21 @@ export const stringMap = {
   home: 'twitch.home',
   ad: 'youtube.ad',
   // Custom strings
-  deferred: 'RTBFAuvio.deferred',
   aPodcast: 'RTBFAuvio.aPodcast',
   aRadio: 'RTBFAuvio.aRadio',
-  toARadio: 'RTBFAuvio.toARadio',
-  toAPodcast: 'RTBFAuvio.toAPodcast',
-  privatePlay: 'RTBFAuvio.privatePlay',
-  startsIn: 'RTBFAuvio.startsIn',
+  buttonViewCategory: "RTBFAuvio.buttonViewCategory",
+  deferred: 'RTBFAuvio.deferred',
   endsIn: 'RTBFAuvio.endsIn',
   liveEnded: 'RTBFAuvio.liveEnded',
   on: 'RTBFAuvio.on',
+  privatePlay: 'RTBFAuvio.privatePlay',
+  toARadio: 'RTBFAuvio.toARadio',
+  toAPodcast: 'RTBFAuvio.toAPodcast',
+  startsIn: 'RTBFAuvio.startsIn',
 }
 
 // eslint-disable-next-line import/no-mutable-exports
 export let strings: Awaited<
-  // eslint-disable-next-line ts/no-deprecated
   ReturnType<typeof presence.getStrings<typeof stringMap>>
 >
 

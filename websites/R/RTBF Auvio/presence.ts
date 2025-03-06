@@ -22,10 +22,6 @@ let isMediaPage = false
 let isMediaPlayer = false
 let title = ''
 let subtitle = ''
-let liveStatus = 'DIRECT'
-
-/* const startLiveTimebar = ''
-const endLiveTimebar = '' */
 
 presence.on('UpdateData', async () => {
   const { /* hostname, */ href, pathname } = document.location
@@ -268,240 +264,283 @@ presence.on('UpdateData', async () => {
         useSlideshow = true
 
         // Fetch RTBF API
-        const response = await fetch(`https://bff-service.rtbf.be/auvio/v1.23/pages${pathname}`)
-        const dataString = await response.text()
+        const response = await fetch(`https://bff-service.rtbf.be/auvio/v1.23/pages/${pathParts[1]!}/${pathParts[2]!}`)
+        const dataString = await response?.text()
         const metadatas = JSON.parse(dataString)
 
-        // Populating metadatas variables
-        let waitTime, remainingTime
-        const mediaType = metadatas.data.pageType
-          ?? metadatas.data.content?.pageType
-          ?? ''
+        let mediaType, description, image, channel, duration, category, scheduledFrom, scheduledTo, waitTime, remainingTime
+        if (response) {
+          // Populating metadatas variables  && metadatas.status === "200"
+          
+          mediaType = metadatas.data.pageType
+            ?? metadatas.data.content?.pageType
+            ?? ''
 
-        let title = metadatas.data.content?.title ?? 'Auvio'
-        let subtitle = metadatas.data.content?.subtitle
-          ?? metadatas.data.content?.media?.subtitle
-          ?? ''
+          title = metadatas.data.content?.title ?? 'Auvio'
+          subtitle = metadatas.data.content?.subtitle
+            ?? metadatas.data.content?.media?.subtitle
+            ?? ''
 
-        if (title === subtitle)
-          subtitle = ''
+          if (title === subtitle)
+            subtitle = ''
 
-        if (!subtitle) {
-          const titleParts = title.split(' - ')
-          if (titleParts.length > 1) {
-            subtitle = titleParts[1] ?? ''
-            title = title.replace(subtitle, '').trim()
-          }
-        }
-
-        const description = metadatas.data.content?.description?.length > 2
-          ? limitText(metadatas.data.content.description, 128)
-          : metadatas.data.content?.media?.description?.length > 2
-            ? limitText(metadatas.data.content.media.description, 128)
-            : 'Auvio'
-
-        const image = metadatas.data.content?.background?.m ?? ActivityAssets.Logo
-
-        const channel = metadatas.data.content?.channel?.label
-          ?? metadatas.data.content?.media?.channelLabel
-          ?? ''
-
-        const duration = metadatas.data.content?.duration
-          ? formatDuration(metadatas.data.content.duration)
-          : metadatas.data.content?.media?.duration
-            ? formatDuration(metadatas.data.content.media.duration)
-            : ''
-
-        const category = metadatas.data.content?.category?.label ?? ''
-
-        const scheduledFrom = metadatas.data.content?.scheduledFrom ?? ''
-        const scheduledTo = metadatas.data.content?.scheduledTo ?? ''
-
-        if (scheduledFrom) {
-          waitTime = (new Date(scheduledFrom).getTime() / 1000) - browsingTimestamp
-        }
-
-        if (scheduledTo) {
-          remainingTime = (new Date(scheduledTo).getTime() / 1000) - browsingTimestamp
-        }
-
-        if (!exist('#player')) {
-          // NOTE: MEDIA PAGE
-          isMediaPage = true
-          if (isMediaPlayer) {
-            slideshow.deleteAllSlides()
-            isMediaPlayer = false
-          }
-
-          // BASE SLIDES
-          presenceData.details = title
-
-          presenceData.largeImageText = description
-          if (usePoster) {
-            presenceData.largeImageKey = await getThumbnail(
-              image,
-              cropPreset.horizontal,
-              colorsMap.get(channel.toLowerCase().replace(/[éè]/g, 'e')),
-            )
-          }
-          else {
-            presenceData.largeImageKey = getChannel(channel).logo // Default logo if not found
-          }
-
-          if (useButtons) {
-            presenceData.buttons = [
-              {
-                label: strings.buttonViewPage,
-                url: href,
-              },
-            ]
-          }
-
-          presenceData.smallImageKey = ActivityAssets.Binoculars
-          presenceData.smallImageText = strings.browsing
-
-          presenceData.startTimestamp = browsingTimestamp
-
-          // SLIDE: Subtitle
-          if (subtitle) {
-            const subtitleData = structuredClone(presenceData)
-            subtitleData.state = subtitle
-            slideshow.addSlide('01', subtitleData, 5000)
-          }
-
-          // SLIDE: Infos
-          if (channel || duration || category) {
-            const infosData = structuredClone(presenceData)
-            infosData.state = [channel, duration, category].filter(Boolean).join(' - ') // "La Une - 51min - Policier"
-            slideshow.addSlide('02', infosData, 5000)
-          }
-
-          // SLIDE: Livestream Status
-          if (mediaType === 'LIVE') {
-            const scheduleData = structuredClone(presenceData)
-            if ((waitTime || -1) > 0) {
-              scheduleData.state = 'Starts in {0}'.replace('{0}', formatDuration(waitTime!)) // "Starts in 3h41"
-              scheduleData.smallImageKey = ActivityAssets.Waiting
-              scheduleData.smallImageText = strings.waitingLive
+          if (!subtitle) {
+            const titleParts = title.split(' - ')
+            if (titleParts.length > 1) {
+              subtitle = titleParts[1] ?? ''
+              title = title.replace(subtitle, '').trim()
             }
-            else if ((remainingTime || -1) > 0) {
-              scheduleData.state = 'Ends in {0}'.replace('{0}', formatDuration(remainingTime!)) // "Ends in 3h41"
-              scheduleData.smallImageKey = ActivityAssets.Deferred
-              scheduleData.smallImageText = strings.browsing
+          }
+
+          description = metadatas.data.content?.description?.length > 2
+            ? limitText(metadatas.data.content.description, 128)
+            : metadatas.data.content?.media?.description?.length > 2
+              ? limitText(metadatas.data.content.media.description, 128)
+              : 'Auvio'
+
+          image = metadatas.data.content?.background?.m ?? ActivityAssets.Logo
+
+          channel = (metadatas.data.content?.channel ?? {})?.label ?? metadatas.data.content?.media?.channelLabel ?? ''
+
+          duration = metadatas.data.content?.duration
+            ? formatDuration(metadatas.data.content.duration)
+            : metadatas.data.content?.media?.duration
+              ? formatDuration(metadatas.data.content.media.duration)
+              : ''
+
+          category = metadatas.data.content?.category?.label ?? ''
+
+          scheduledFrom = metadatas.data.content?.scheduledFrom ?? ''
+          scheduledTo = metadatas.data.content?.scheduledTo ?? ''
+
+          if (scheduledFrom) {
+            waitTime = (new Date(scheduledFrom).getTime() / 1000) - browsingTimestamp
+          }
+
+          if (scheduledTo) {
+            remainingTime = (new Date(scheduledTo).getTime() / 1000) - browsingTimestamp
+          }
+        } else {
+          let mediaData: any
+
+          for (
+            let i = 0;
+            i
+            < document.querySelectorAll('script[type=\'application/ld+json\']')
+              .length;
+            i++
+          ) {
+            const data = JSON.parse(
+              document.querySelectorAll('script[type=\'application/ld+json\']')[i]?.textContent ?? '{}',
+            )
+            if (['Movie', 'Episode', 'BroadcastEvent', 'VideoObject'].includes(data['@type']))
+              mediaData = data
+          }
+
+          mediaType = pathParts[1];
+
+          subtitle = document.querySelector(".DetailsTitle_subtitle__D30rn")?.textContent || "";
+          title = document.querySelector('div.DetailsTitle_title__mdRHD > h1')?.textContent ?? "Auvio";
+          title = subtitle ? title.replace(subtitle,"") : title
+          description = mediaData?.description && mediaData.description.length > 2 ? mediaData.description : "Auvio";
+          description = limitText(description, 128)
+          image = mediaData?.thumbnailUrl || ActivityAssets.Logo;
+          channel = document.querySelectorAll('div.DetailsTitle_channelCategory__vh_cY > div')[0]?.textContent ?? ""
+          duration = formatDuration(mediaData?.duration ?? 0); 
+          category = document.querySelector(".Breadcrumb_breadcrumb__fdU_2 > ul > li:last-child > span")?.textContent || "";
+
+          scheduledFrom = "";
+          scheduledTo = "";
+          waitTime = 0;
+          remainingTime = 0;
+
+        }
+          if (!exist('#player')) {
+            // NOTE: MEDIA PAGE
+            isMediaPage = true
+            if (isMediaPlayer) {
+              slideshow.deleteAllSlides()
+              isMediaPlayer = false
+            }
+
+            // BASE SLIDES
+            presenceData.details = title
+
+            presenceData.largeImageText = description
+            if (usePoster) {
+              presenceData.largeImageKey = await getThumbnail(
+                image,
+                cropPreset.horizontal,
+                colorsMap.get(channel.toLowerCase().replace(/[éè]/g, 'e')),
+              )
             }
             else {
-              scheduleData.state = strings.liveEnded // "Livestream has ended"
+              presenceData.largeImageKey = getChannel(channel).logo // Default logo if not found
             }
-            slideshow.addSlide('03', scheduleData, 5000)
-          }
-        }
-        else {
-          // NOTE: MEDIA PLAYER PAGE
-          isMediaPlayer = true
-          if (isMediaPage) {
-            slideshow.deleteAllSlides()
-            isMediaPage = false
-          }
-
-          // Update the variables only if the overlay is visible and the elements are found
-          title = document.querySelector('.TitleDetails_title__vsoUq')?.textContent ?? title
-          subtitle = document.querySelector('.TitleDetails_subtitle__y1v4e')?.textContent ?? subtitle
-          // liveStatus = document.querySelector('.TitleDetails_directBall__M_Kac')?.textContent ?? liveStatus
-
-          const videoArray = document.querySelectorAll('div.redbee-player-media-container > video')
-          const video = videoArray[videoArray.length - 1] as HTMLVideoElement
-
-          // BASE SLIDES
-          if (usePresenceName)
-            presenceData.name = title
-
-          presenceData.details = title
-
-          presenceData.largeImageText = description
-          if (usePoster) {
-            presenceData.largeImageKey = await getThumbnail(
-              image,
-              cropPreset.horizontal,
-              colorsMap.get(channel.toLowerCase().replace(/[éè]/g, 'e')),
-            )
-          }
-          else {
-            presenceData.largeImageKey = getChannel(channel).logo // Default logo if not found
-          }
-
-          if (mediaType === 'LIVE') {
-            if (usePresenceName && useChannelName && channel !== '')
-              presenceData.name = channel
 
             if (useButtons) {
               presenceData.buttons = [
                 {
-                  label: strings.buttonWatchStream,
+                  label: strings.buttonViewPage,
                   url: href,
                 },
               ]
             }
 
-            if (liveStatus.toLowerCase() === 'direct') { // Live
-              presenceData.smallImageKey = !video.paused
-                ? ActivityAssets.LiveAnimated
-                : Assets.Pause
-              presenceData.smallImageText = !video.paused
-                ? strings.live
-                : strings.pause
+            presenceData.smallImageKey = ActivityAssets.Binoculars
+            presenceData.smallImageText = strings.browsing
 
-              presenceData.startTimestamp = (new Date(scheduledFrom).getTime() / 1000)
-              presenceData.endTimestamp = (new Date(scheduledTo).getTime() / 1000)
+            presenceData.startTimestamp = browsingTimestamp
+
+            // SLIDE: Subtitle
+            if (subtitle) {
+              const subtitleData = structuredClone(presenceData)
+              subtitleData.state = subtitle
+              slideshow.addSlide('01', subtitleData, 5000)
             }
-            else { // Deferred
-              presenceData.smallImageKey = !video.paused
-                ? ActivityAssets.Deferred
-                : Assets.Pause
-              presenceData.smallImageText = !video.paused
-                ? strings.deferred
-                : strings.pause
+
+            // SLIDE: Infos
+            if (channel || duration || category) {
+              const infosData = structuredClone(presenceData)
+              infosData.state = [channel, duration, category].filter(Boolean).join(' - ') // "La Une - 51min - Policier"
+              slideshow.addSlide('02', infosData, 5000)
+            }
+
+            // SLIDE: Livestream Status
+            if (mediaType === 'LIVE') {
+              const scheduleData = structuredClone(presenceData)
+              if ((waitTime || -1) > 0) {
+                scheduleData.state = 'Starts in {0}'.replace('{0}', formatDuration(waitTime!)) // "Starts in 3h41"
+                scheduleData.smallImageKey = ActivityAssets.Waiting
+                scheduleData.smallImageText = strings.waitingLive
+              }
+              else if ((remainingTime || -1) > 0) {
+                scheduleData.state = 'Ends in {0}'.replace('{0}', formatDuration(remainingTime!)) // "Ends in 3h41"
+                scheduleData.smallImageKey = ActivityAssets.Deferred
+                scheduleData.smallImageText = strings.browsing
+              }
+              else {
+                scheduleData.state = strings.liveEnded // "Livestream has ended"
+              }
+              slideshow.addSlide('03', scheduleData, 5000)
             }
           }
           else {
-            if (useButtons) {
-              presenceData.buttons = [
-                {
-                  label: strings.buttonWatchVideo,
-                  url: href,
-                },
-              ]
+            // NOTE: MEDIA PLAYER PAGE
+            isMediaPlayer = true
+            if (isMediaPage) {
+              slideshow.deleteAllSlides()
+              isMediaPage = false
             }
 
-            if (video.paused) {
-              presenceData.smallImageKey = Assets.Pause
-              presenceData.smallImageText = strings.pause
+            // Update the variables only if the overlay is visible and the elements are found
+            title = document.querySelector('.TitleDetails_title__vsoUq')?.textContent ?? title
+            subtitle = document.querySelector('.TitleDetails_subtitle__y1v4e')?.textContent ?? subtitle
 
-              presenceData.startTimestamp = browsingTimestamp
-              delete presenceData.endTimestamp
+            const videoArray = document.querySelectorAll('div.redbee-player-media-container > video')
+            const video = videoArray[videoArray.length - 1] as HTMLVideoElement
+
+            // BASE SLIDES
+            if (usePresenceName)
+              presenceData.name = title
+
+            presenceData.details = title
+
+            presenceData.largeImageText = description
+            if (usePoster) {
+              presenceData.largeImageKey = await getThumbnail(
+                image,
+                cropPreset.horizontal,
+                colorsMap.get(channel.toLowerCase().replace(/[éè]/g, 'e')),
+              )
             }
             else {
-              presenceData.smallImageKey = Assets.Play
-              presenceData.smallImageText = strings.play
+              presenceData.largeImageKey = getChannel(channel).logo // Default logo if not found
+            }
 
-              presenceData.startTimestamp = getTimestampsFromMedia(video)[0]
-              presenceData.endTimestamp = getTimestampsFromMedia(video)[1]
+            // LIVE MEDIA PLAYER
+            if (mediaType === 'LIVE') {
+              if (usePresenceName && useChannelName && channel !== '')
+                presenceData.name = channel
+
+              if (useButtons) {
+                presenceData.buttons = [
+                  {
+                    label: strings.buttonWatchStream,
+                    url: href,
+                  },
+                ]
+              }
+
+              const liveDelay = (Math.abs(Math.floor(new Date().getTime() / 1000 - video.currentTime)))
+              if (liveDelay < 60) { // Live
+                presenceData.smallImageKey = video.paused
+                  ? Assets.Pause
+                  : ActivityAssets.LiveAnimated
+                presenceData.smallImageText = video.paused
+                  ? strings.pause
+                  : strings.live
+
+                presenceData.startTimestamp = (new Date(scheduledFrom).getTime() / 1000)
+                presenceData.endTimestamp = (new Date(scheduledTo).getTime() / 1000)
+              }
+              else { // Deferred
+                presenceData.smallImageKey = video.paused
+                  ? Assets.Pause
+                  : ActivityAssets.DeferredAnimated
+                presenceData.smallImageText = video.paused
+                  ? strings.pause
+                  : strings.deferred
+              }
+
+              // SLIDE: Watching Live
+              const watchingData = structuredClone(presenceData)
+              watchingData.state = channel
+                ? strings.on.replace('{0}', strings.watchingLive).replace('{1}', channel)
+                : strings.on.replace('{0}', strings.watchingLive).replace('{1}', 'Auvio')
+              slideshow.addSlide('03', watchingData, 5000)
+            }
+            else {
+              // VOD MEDIA PLAYER
+              if (useButtons) {
+                presenceData.buttons = [
+                  {
+                    label: strings.buttonWatchVideo,
+                    url: href,
+                  },
+                ]
+              }
+
+              if (video.paused) {
+                presenceData.smallImageKey = Assets.Pause
+                presenceData.smallImageText = strings.pause
+
+                presenceData.startTimestamp = browsingTimestamp
+                delete presenceData.endTimestamp
+              }
+              else {
+                presenceData.smallImageKey = Assets.Play
+                presenceData.smallImageText = strings.play
+
+                presenceData.startTimestamp = getTimestampsFromMedia(video)[0]
+                presenceData.endTimestamp = getTimestampsFromMedia(video)[1]
+              }
+            }
+
+            // SLIDE: Subtitle
+            if (subtitle) {
+              const subtitleData = structuredClone(presenceData)
+              subtitleData.state = subtitle
+              slideshow.addSlide('01', subtitleData, 5000)
+            }
+
+            // SLIDE: Infos
+            if (channel || duration || category) {
+              const infosData = structuredClone(presenceData)
+              infosData.state = [channel, duration, category].filter(Boolean).join(' - ') // "La Une - 51min - Policier"
+              slideshow.addSlide('02', infosData, 5000)
             }
           }
-
-          // SLIDE: Subtitle
-          if (subtitle) {
-            const subtitleData = structuredClone(presenceData)
-            subtitleData.state = subtitle
-            slideshow.addSlide('01', subtitleData, 5000)
-          }
-
-          // SLIDE: Infos
-          if (channel || duration || category) {
-            const infosData = structuredClone(presenceData)
-            infosData.state = [channel, duration, category].filter(Boolean).join(' - ') // "La Une - 51min - Policier"
-            slideshow.addSlide('02', infosData, 5000)
-          }
-        }
       }
       break
     }
@@ -557,6 +596,7 @@ presence.on('UpdateData', async () => {
             ? 'img.TileProgramPoster_hoverPicture__v5RJX' // If programs cover art are in portrait
             : 'img.TileMedia_hoverPicture__RGh_m' // If programs cover art are in landscape
 
+          // SLIDES: Samples of content in the category
           for (
             let index = 0;
             index < document.querySelector('.swiper-wrapper')!.childElementCount;
@@ -568,10 +608,10 @@ presence.on('UpdateData', async () => {
 
             // Sometimes url starts with data:image and it doesn't render well, so we take no risks
             if (!src.match('data:image') && src !== '') {
-              const tempData = structuredClone(presenceData) // Deep copy
+              const sampleData = structuredClone(presenceData) // Deep copy
               const mediaTitle = document.querySelectorAll(selector)[index]?.getAttribute('title') || index.toString()
 
-              tempData.largeImageKey = await getThumbnail(
+              sampleData.largeImageKey = await getThumbnail(
                 src,
                 exist('img.TileProgramPoster_hoverPicture__v5RJX')
                   ? cropPreset.vertical
@@ -579,12 +619,26 @@ presence.on('UpdateData', async () => {
                 colorsMap.get(categoryTitle.toLowerCase().replace(/[éè]/g, 'e')) || colorsMap.get(''),
               )
               if (mediaTitle !== index.toString()) {
-                const temp = strings.on.replace('{1}', pathParts[1]!.includes('chaine') ? categoryTitle : 'Auvio')
-                tempData.largeImageText = tempData.state = temp.replace('{0}', limitText(mediaTitle, 128 - temp.length))
+                const sample = strings.on.replace('{1}', pathParts[1]!.includes('chaine') ? categoryTitle : 'Auvio')
+                sampleData.largeImageText = sampleData.state = sample.replace('{0}', limitText(mediaTitle, 128 - sample.length))
               }
-              slideshow.addSlide(mediaTitle, tempData, 5000)
+              slideshow.addSlide(mediaTitle, sampleData, 2500)
+
+              // SLIDE: Viewing Category
+              const viewingData = structuredClone(sampleData)
+              viewingData.state = strings.viewCategory.replace(':', '')
+              slideshow.addSlide(`${mediaTitle}*`, viewingData, 2500)
             }
           }
+        }
+
+        if (useButtons) {
+          presenceData.buttons = [
+            {
+              label: strings.buttonViewPage,
+              url: href,
+            },
+          ]
         }
       }
       break
