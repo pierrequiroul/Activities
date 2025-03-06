@@ -40,7 +40,7 @@ export const stringMap = {
   // Custom strings
   aPodcast: 'RTBFAuvio.aPodcast',
   aRadio: 'RTBFAuvio.aRadio',
-  buttonViewCategory: "RTBFAuvio.buttonViewCategory",
+  buttonViewCategory: 'RTBFAuvio.buttonViewCategory',
   deferred: 'RTBFAuvio.deferred',
   endsIn: 'RTBFAuvio.endsIn',
   liveEnded: 'RTBFAuvio.liveEnded',
@@ -352,13 +352,22 @@ Gradient colors in RGB ex: [R, G, B, GradientOffset] */
   ['tipik', '#0df160'],
   ['la deux', '#ec088f'],
   ['la trois', '#9b49a1'],
-  ['classic 21', '#8c408a'],
+  ['classic 21', '#8d0282'],
   ['la premiere', '#083e7a'],
-  ['vivacite', '#f93308'],
+  ['vivacite', 'viva', 'viva sport', '#f93308'],
   ['musiq3', '#d63c4d'],
   ['tarmac', '#222222'],
   ['jam', '#222222'],
-  ['viva', '#f93308'],
+  ['ixpe', '#f93308'],
+  ['ab3', '#565656'],
+  ['abxplore', '#268ca0'],
+  ['ln24', '#094c5d'],
+  ['fun radio', '#fe0078'],
+  ['nrj', '#e70815'],
+  ['arte', '#f84c2f'],
+  ['bruzz', '#ee2c40'],
+  ['brf', '#00325f'],
+  ['kids', '#f93308'],
 ])
 
 interface ChannelInfo {
@@ -369,9 +378,9 @@ interface ChannelInfo {
 }
 
 export function getChannel(channel: string): ChannelInfo {
-  channel = channel.toLowerCase().replace(/[éè]/g, 'e').replace('-', ' ')
+  channel = channel.toLowerCase().replace(/[éè]/g, 'e').replace('-', '').replace(' ', '')
   switch (true) {
-    case ['la une', 'laune'].includes(channel): {
+    case ['laune'].includes(channel): {
       return {
         channel: 'La Une',
         type: ActivityType.Watching,
@@ -387,7 +396,7 @@ export function getChannel(channel: string): ChannelInfo {
         color: colorsMap.get('tipik')!,
       }
     }
-    case ['la trois', 'latrois'].includes(channel): {
+    case ['latrois'].includes(channel): {
       return {
         channel: 'La Trois',
         type: ActivityType.Watching,
@@ -395,7 +404,7 @@ export function getChannel(channel: string): ChannelInfo {
         color: colorsMap.get('la trois')!,
       }
     }
-    case ['classic 21', 'classic21', 'classic'].includes(channel): {
+    case ['classic21', 'classic'].includes(channel): {
       return {
         channel: 'Classic 21',
         type: ActivityType.Listening,
@@ -403,7 +412,7 @@ export function getChannel(channel: string): ChannelInfo {
         color: colorsMap.get('classic 21')!,
       }
     }
-    case ['la premiere', 'lapremiere', 'la'].includes(channel): {
+    case ['lapremiere'].includes(channel): {
       return {
         channel: 'La Première',
         type: ActivityType.Listening,
@@ -524,19 +533,17 @@ export function getChannel(channel: string): ChannelInfo {
       }
     }
     case [
-      'medias de proximite',
-      'antenne centre',
+      'mediasdeproximite',
+      'antennecentre',
       'bx1',
       'bouke',
-      'canal zoom',
+      'canalzoom',
       'matele',
       'notele',
       'rtc',
       'telemb',
       'telesambre',
-      'tv com',
       'tvcom',
-      'tv lux',
       'tvlux',
       'vedia',
     ].includes(channel): {
