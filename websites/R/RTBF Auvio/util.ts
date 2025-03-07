@@ -183,7 +183,7 @@ export function getAdditionnalStrings(
 } */
 
 export enum ActivityAssets { // Other default assets can be found at index.d.ts
-  Logo = 'https://i.imgur.com/m2gRowq.png',
+  Logo = 'https://imgur.com/m2gRowq.png',
   Animated = '',
   Auvio = 'https://imgur.com/Ky3l5MZ.png',
   Binoculars = 'https://imgur.com/aF3TWVK.png',
@@ -193,33 +193,36 @@ export enum ActivityAssets { // Other default assets can be found at index.d.ts
   ListeningPaused = 'https://imgur.com/6qvsVLa.png',
   ListeningVOD = 'https://imgur.com/m4YOJuH.gif',
   ListeningLive = 'https://imgur.com/8nd4UdO.gif',
-  Deferred = 'https://i.imgur.com/uvRMlkv.png',
+  Deferred = 'https://imgur.com/uvRMlkv.png',
   DeferredAnimated = 'https://imgur.com/cA3mQhL.gif',
   LiveAnimated = 'https://imgur.com/oBXFRPE.gif',
   // Localized
   AdEn = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/4.png',
   AdFr = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/5.png',
   // Channels
-  LaUne = 'https://imgur.com/tmFLVEZ.png',
-  Tipik = 'https://imgur.com/w7nj6WR.png',
-  LaTrois = 'https://imgur.com/7VaOFVk.png',
-  Classic21 = 'https://imgur.com/Ocr1zGu.png',
-  LaPremiere = 'https://imgur.com/Ffjsqzu.png',
-  Vivacite = 'https://imgur.com/57XKm7C.png',
-  Musiq3 = 'https://imgur.com/syQuNbG.png',
-  Tarmac = 'https://imgur.com/cVqhgnM.png',
-  Jam = 'https://imgur.com/TmXgxdW.png',
-  Viva = 'https://imgur.com/gSR3YWE.png',
-  Ixpe = 'https://imgur.com/FGu3BY9.png',
-  MediasProx = 'https://imgur.com/Roa6C5I.png',
-  AB3 = 'https://imgur.com/utT3GeJ.png',
-  ABXPLORE = 'https://imgur.com/lCMetzW.png',
-  LN24 = 'https://imgur.com/mLQfLVU.png',
-  NRJ = 'https://imgur.com/ffN5YyQ.png',
-  Arte = 'https://imgur.com/3IJaVaj.png',
-  BRUZZ = 'https://imgur.com/SNtrrxL.png',
-  BRF = 'https://imgur.com/pcdX4gD.png',
-  Kids = 'https://imgur.com/hCECgHg.png',
+  LaUne = 'https://imgur.com/KKnPbmN.png',
+  LaDeux = "https://imgur.com/24c3O1i.png",
+  Tipik = 'https://imgur.com/B6mKWzS.png',
+  LaTrois = 'https://imgur.com/BAQ1ibT.png',
+  Classic21 = 'https://imgur.com/fTIqWmj.png',
+  LaPremiere = 'https://imgur.com/Xa8NFin.png',
+  Vivacite = 'https://imgur.com/7Bju5q0.png',
+  Musiq3 = 'https://imgur.com/o7HAz0D.png',
+  Tarmac = 'https://imgur.com/gDCyoXm.png',
+  Jam = 'https://imgur.com/fkmnPtg.png',
+  Viva = 'https://imgur.com/vv3JhPF.png',
+  Vivasport = "https://imgur.com/BKrQA6n.png",
+  Ixpe = 'https://imgur.com/l9NR9Qp.png',
+  MediasProx = 'https://imgur.com/N4QrJLq.png',
+  AB3 = 'https://imgur.com/J78D4Xj.png',
+  ABXPLORE = 'https://imgur.com/GgdoWRi.png',
+  LN24 = 'https://imgur.com/0XYGUbV.png',
+  FunRadio = 'https://imgur.com/bERBU6l.png',
+  NRJ = 'https://imgur.com/rlYpmuk.png',
+  Arte = 'https://imgur.com/7hbWqRV.png',
+  BRUZZ = 'https://imgur.com/5oEq4oI.png',
+  BRF = 'https://imgur.com/NLxoehN.png',
+  Kids = 'https://imgur.com/hZD8qiH.png',
 }
 
 export function getLocalizedAssets(
@@ -302,73 +305,80 @@ export function formatDuration(time: string | number) {
   }
 }
 
-export const colorsMap = new Map<string, string | number[][]>([
-/* Plain color in hexadecimal ex: #ffaa00
-Gradient colors in RGB ex: [R, G, B, GradientOffset] */
-  // Default colors
-  ['', '#ffcc00'],
-  ['default', '#ffcc00'],
-  // Category colors
-  ['series', '#b92561'],
-  ['films', '#7e55a5'],
-  [
-    'animes',
-    [
-      [255, 226, 63, 0.2],
-      [255, 9, 119, 0.5],
-      [59, 124, 154, 0.75],
-    ],
-  ],
-  ['sport', '#15c6a4'],
-  ['info', '#109aa9'],
-  ['kids', '#434b66'],
-  ['documentaires', '#345a4a'],
-  ['divertissement', '#444d90'],
-  [
-    'noir jaune belge',
-    [
-      [7, 7, 7, 0.15],
-      [198, 170, 34, 0.45],
-      [194, 57, 57, 0.8],
-    ],
-  ],
-  ['lifestyle', '#714e6e'],
-  ['culture', '#863d67'],
-  ['musique', '#4a6f6f'],
-  [
-    'lgbtqia+',
-    [
-      [242, 130, 10, 0.2],
-      [142, 171, 102, 0.3],
-      [156, 60, 115, 0.6],
-      [68, 37, 128, 0.8],
-    ],
-  ],
-  ['decodage médias', '#b26e38'],
-  ['archives sonuma', '#663c2a'],
-  ['direct', '#e55232'],
-  // Channel colors
-  ['la une', '#ee372b'],
-  ['tipik', '#0df160'],
-  ['la deux', '#ec088f'],
-  ['la trois', '#9b49a1'],
-  ['classic 21', '#8d0282'],
-  ['la premiere', '#083e7a'],
-  ['vivacite', 'viva', 'viva sport', '#f93308'],
-  ['musiq3', '#d63c4d'],
-  ['tarmac', '#222222'],
-  ['jam', '#222222'],
-  ['ixpe', '#f93308'],
-  ['ab3', '#565656'],
-  ['abxplore', '#268ca0'],
-  ['ln24', '#094c5d'],
-  ['fun radio', '#fe0078'],
-  ['nrj', '#e70815'],
-  ['arte', '#f84c2f'],
-  ['bruzz', '#ee2c40'],
-  ['brf', '#00325f'],
-  ['kids', '#f93308'],
-])
+export function getColor(string: string) {
+  const formattedString = string.toLowerCase().replace(/[éè]/g, 'e').replace(" ","").replace("-","")
+  const colorsMap = new Map<string, string | number[][]>([
+    /* Plain color in hexadecimal ex: #ffaa00
+    Gradient colors in RGB ex: [R, G, B, GradientOffset] */
+      // Default colors
+      ['', '#ffcc00'],
+      ['default', '#ffcc00'],
+      // Category colors
+      ['series', '#b92561'],
+      ['films', '#7e55a5'],
+      [
+        'animes',
+        [
+          [255, 226, 63, 0.2],
+          [255, 9, 119, 0.5],
+          [59, 124, 154, 0.75],
+        ],
+      ],
+      ['sport', '#15c6a4'],
+      ['info', '#109aa9'],
+      ['kids', '#434b66'],
+      ['documentaires', '#345a4a'],
+      ['divertissement', '#444d90'],
+      [
+        'noir jaune belge',
+        [
+          [7, 7, 7, 0.15],
+          [198, 170, 34, 0.45],
+          [194, 57, 57, 0.8],
+        ],
+      ],
+      ['lifestyle', '#714e6e'],
+      ['culture', '#863d67'],
+      ['musique', '#4a6f6f'],
+      [
+        'lgbtqia+',
+        [
+          [242, 130, 10, 0.2],
+          [142, 171, 102, 0.3],
+          [156, 60, 115, 0.6],
+          [68, 37, 128, 0.8],
+        ],
+      ],
+      ['decodagemedias', '#b26e38'],
+      ['archivessonuma', '#663c2a'],
+      ['direct', '#e55232'],
+      // Channel colors
+      ['laune', '#ee372b'],
+      ['tipik', '#0df160'],
+      ['ladeux', '#ec088f'],
+      ['latrois', '#9b49a1'],
+      ['classic21', '#8d0282'],
+      ['lapremiere', '#083e7a'],
+      ['vivacite', '#f93308'],
+      ['viva', '#f93308'],
+      ['vivasport', '#f93308'],
+      ['musiq3', '#d63c4d'],
+      ['tarmac', '#222222'],
+      ['jam', '#222222'],
+      ['ixpe', '#f93308'],
+      ['ab3', '#565656'],
+      ['abxplore', '#268ca0'],
+      ['ln24', '#094c5d'],
+      ['funradio', '#ff087c'],
+      ['nrj', '#e70815'],
+      ['arte', '#f84c2f'],
+      ['bruzz', '#ee2c40'],
+      ['brf', '#00325f'],
+      ['kids', '#f93308'],
+    ])
+    return colorsMap.get(formattedString) ?? colorsMap.get("")
+}
+
 
 interface ChannelInfo {
   channel: string
@@ -378,158 +388,174 @@ interface ChannelInfo {
 }
 
 export function getChannel(channel: string): ChannelInfo {
-  channel = channel.toLowerCase().replace(/[éè]/g, 'e').replace('-', '').replace(' ', '')
+  const channelFormatted = channel.toLowerCase().replace(/[éè]/g, 'e').replace('-', '').replace(' ', '')
   switch (true) {
-    case ['laune'].includes(channel): {
+    case ['laune'].includes(channelFormatted): {
       return {
         channel: 'La Une',
         type: ActivityType.Watching,
         logo: ActivityAssets.LaUne,
-        color: colorsMap.get('la une')!,
+        color: getColor('la une')!,
       }
     }
-    case ['tipik'].includes(channel): {
+    case ['ladeux'].includes(channelFormatted): {
+      return {
+        channel: 'La Deux',
+        type: ActivityType.Watching,
+        logo: ActivityAssets.LaDeux,
+        color: getColor('la deux')!,
+      }
+    }
+    case ['tipik'].includes(channelFormatted): {
       return {
         channel: 'Tipik',
         type: ActivityType.Watching,
         logo: ActivityAssets.Tipik,
-        color: colorsMap.get('tipik')!,
+        color: getColor('tipik')!,
       }
     }
-    case ['latrois'].includes(channel): {
+    case ['latrois'].includes(channelFormatted): {
       return {
         channel: 'La Trois',
         type: ActivityType.Watching,
         logo: ActivityAssets.LaTrois,
-        color: colorsMap.get('la trois')!,
+        color: getColor('la trois')!,
       }
     }
-    case ['classic21', 'classic'].includes(channel): {
+    case ['classic21', 'classic'].includes(channelFormatted): {
       return {
         channel: 'Classic 21',
         type: ActivityType.Listening,
         logo: ActivityAssets.Classic21,
-        color: colorsMap.get('classic 21')!,
+        color: getColor('classic 21')!,
       }
     }
-    case ['lapremiere'].includes(channel): {
+    case ['lapremiere'].includes(channelFormatted): {
       return {
         channel: 'La Première',
         type: ActivityType.Listening,
         logo: ActivityAssets.LaPremiere,
-        color: colorsMap.get('la premiere')!,
+        color: getColor('la premiere')!,
       }
     }
-    case ['vivacite'].includes(channel): {
+    case ['vivacite'].includes(channelFormatted): {
       return {
         channel: 'Vivacité',
         type: ActivityType.Listening,
         logo: ActivityAssets.Vivacite,
-        color: colorsMap.get('vivacite')!,
+        color: getColor('vivacite')!,
       }
     }
-    case ['musiq3'].includes(channel): {
+    case ['musiq3'].includes(channelFormatted): {
       return {
         channel: 'Musiq3',
         type: ActivityType.Listening,
         logo: ActivityAssets.Musiq3,
-        color: colorsMap.get('musiq3')!,
+        color: getColor('musiq3')!,
       }
     }
-    case ['tarmac'].includes(channel): {
+    case ['tarmac'].includes(channelFormatted): {
       return {
         channel: 'Tarmac',
         type: ActivityType.Listening,
         logo: ActivityAssets.Tarmac,
-        color: colorsMap.get('tarmac')!,
+        color: getColor('tarmac')!,
       }
     }
-    case ['jam'].includes(channel): {
+    case ['jam'].includes(channelFormatted): {
       return {
         channel: 'Jam',
         type: ActivityType.Listening,
         logo: ActivityAssets.Jam,
-        color: colorsMap.get('jam')!,
+        color: getColor('jam')!,
       }
     }
-    case ['viva'].includes(channel): {
+    case ['viva'].includes(channelFormatted): {
       return {
         channel: 'Viva+',
         type: ActivityType.Listening,
         logo: ActivityAssets.Viva,
-        color: colorsMap.get('viva')!,
+        color: getColor('viva')!,
       }
     }
-    case ['ixpe'].includes(channel): {
+    case ['ixpe'].includes(channelFormatted): {
       return {
         channel: 'Ixpé',
         type: ActivityType.Watching,
         logo: ActivityAssets.Ixpe,
-        color: colorsMap.get('')!,
+        color: getColor('ixpe')!,
       }
     }
-    case ['ab3'].includes(channel): {
+    case ['ab3'].includes(channelFormatted): {
       return {
         channel: 'AB3',
         type: ActivityType.Watching,
         logo: ActivityAssets.AB3,
-        color: colorsMap.get('')!,
+        color: getColor('ab3')!,
       }
     }
-    case ['abxplore'].includes(channel): {
+    case ['abxplore'].includes(channelFormatted): {
       return {
         channel: 'ABXPLORE',
         type: ActivityType.Watching,
         logo: ActivityAssets.ABXPLORE,
-        color: colorsMap.get('')!,
+        color: getColor('abxplore')!,
       }
     }
-    case ['ln24'].includes(channel): {
+    case ['ln24'].includes(channelFormatted): {
       return {
         channel: 'LN24',
         type: ActivityType.Watching,
         logo: ActivityAssets.LN24,
-        color: colorsMap.get('')!,
+        color: getColor('ln24')!,
       }
     }
-    case ['nrj'].includes(channel): {
+    case ['funradio'].includes(channelFormatted): {
+      return {
+        channel: 'Fun Radio',
+        type: ActivityType.Watching,
+        logo: ActivityAssets.FunRadio,
+        color: getColor('funradio')!,
+      }
+    }
+    case ['nrj'].includes(channelFormatted): {
       return {
         channel: 'NRJ',
         type: ActivityType.Watching,
         logo: ActivityAssets.NRJ,
-        color: colorsMap.get('')!,
+        color: getColor('nrj')!,
       }
     }
-    case ['arte'].includes(channel): {
+    case ['arte'].includes(channelFormatted): {
       return {
         channel: 'Arte',
         type: ActivityType.Watching,
         logo: ActivityAssets.Arte,
-        color: colorsMap.get('')!,
+        color: getColor('arte')!,
       }
     }
-    case ['bruzz'].includes(channel): {
+    case ['bruzz'].includes(channelFormatted): {
       return {
         channel: 'BRUZZ',
         type: ActivityType.Watching,
         logo: ActivityAssets.BRUZZ,
-        color: colorsMap.get('')!,
+        color: getColor('bruzz')!,
       }
     }
-    case ['brf'].includes(channel): {
+    case ['brf'].includes(channelFormatted): {
       return {
         channel: 'BRF',
         type: ActivityType.Watching,
         logo: ActivityAssets.BRF,
-        color: colorsMap.get('')!,
+        color: getColor('brf')!,
       }
     }
-    case ['kids'].includes(channel): {
+    case ['kids'].includes(channelFormatted): {
       return {
         channel: 'RTBF Auvio',
         type: ActivityType.Watching,
         logo: ActivityAssets.Kids,
-        color: colorsMap.get('')!,
+        color: getColor('kids')!,
       }
     }
     case [
@@ -546,12 +572,12 @@ export function getChannel(channel: string): ChannelInfo {
       'tvcom',
       'tvlux',
       'vedia',
-    ].includes(channel): {
+    ].includes(channelFormatted): {
       return {
         channel: 'Médias de proximité',
         type: ActivityType.Watching,
         logo: ActivityAssets.MediasProx,
-        color: colorsMap.get('')!,
+        color: getColor('mediaproximite')!,
       }
     }
     default: {
@@ -559,7 +585,7 @@ export function getChannel(channel: string): ChannelInfo {
         channel: 'RTBF Auvio',
         type: ActivityType.Watching,
         logo: ActivityAssets.Auvio,
-        color: colorsMap.get('')!,
+        color: getColor('')!,
       }
     }
   }
@@ -577,7 +603,7 @@ export const cropPreset = {
 export async function getThumbnail(
   src: string = ActivityAssets.Logo,
   cropPercentages: typeof cropPreset.squared = cropPreset.squared, // Left, Right, top, Bottom
-  borderColor: string | number[][] = colorsMap.get('')!,
+  borderColor: string | number[][] = getColor('')!,
   borderWidth = 15,
   progress = 2,
 ): Promise<string> {

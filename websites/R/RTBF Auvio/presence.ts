@@ -2,11 +2,12 @@ import { ActivityType, Assets, getTimestamps, getTimestampsFromMedia, timestampF
 import {
   ActivityAssets,
   checkStringLanguage,
-  colorsMap,
   cropPreset,
   exist,
   formatDuration,
   getChannel,
+  getColor,
+  getLocalizedAssets,
   getSetting,
   getThumbnail,
   limitText,
@@ -311,8 +312,8 @@ presence.on('UpdateData', async () => {
 
           category = metadatas.data.content?.category?.label ?? ''
 
-          scheduledFrom = metadatas.data.content?.scheduledFrom ?? ''
-          scheduledTo = metadatas.data.content?.scheduledTo ?? ''
+          scheduledFrom = metadatas.data.content?.scheduledFrom ?? new Date(browsingTimestamp).toISOString()
+          scheduledTo = metadatas.data.content?.scheduledTo ?? new Date(browsingTimestamp + 6000).toISOString()
 
           if (scheduledFrom) {
             waitTime = (new Date(scheduledFrom).getTime() / 1000) - browsingTimestamp
@@ -370,7 +371,7 @@ presence.on('UpdateData', async () => {
             presenceData.largeImageKey = await getThumbnail(
               image,
               cropPreset.horizontal,
-              colorsMap.get(channel.toLowerCase().replace(/[éè]/g, 'e')),
+              getColor(channel),
             )
           }
           else {
@@ -438,6 +439,7 @@ presence.on('UpdateData', async () => {
 
           const videoArray = document.querySelectorAll('div.redbee-player-media-container > video')
           const video = videoArray[videoArray.length - 1] as HTMLVideoElement
+          const bAdCountdown = exist(".sas-ctrl-countdown.sas-enable")
 
           // BASE SLIDES
           if (usePresenceName)
@@ -450,7 +452,7 @@ presence.on('UpdateData', async () => {
             presenceData.largeImageKey = await getThumbnail(
               image,
               cropPreset.horizontal,
-              colorsMap.get(channel.toLowerCase().replace(/[éè]/g, 'e')),
+              getColor(channel),
             )
           }
           else {
@@ -458,7 +460,10 @@ presence.on('UpdateData', async () => {
           }
 
           // LIVE MEDIA PLAYER
-          if (mediaType === 'LIVE') {
+          const liveDelay = (Math.abs(Math.floor(new Date().getTime() / 1000 - video.currentTime)))
+          if (mediaType === 'LIVE' 
+            || (liveDelay < 3600) // Sometimes lives don't follow established codes
+          ) {
             if (usePresenceName && useChannelName && channel !== '')
               presenceData.name = channel
 
@@ -471,8 +476,13 @@ presence.on('UpdateData', async () => {
               ]
             }
 
-            const liveDelay = (Math.abs(Math.floor(new Date().getTime() / 1000 - video.currentTime)))
-            if (liveDelay < 60) { // Live
+            if (bAdCountdown) {
+              presenceData.smallImageKey = getLocalizedAssets(newLang, "Ad"),
+              presenceData.smallImageText = strings.ad
+
+              presenceData.startTimestamp = browsingTimestamp
+              delete presenceData.endTimestamp
+            } else if (liveDelay < 60) { // Live
               presenceData.smallImageKey = video.paused
                 ? Assets.Pause
                 : ActivityAssets.LiveAnimated
@@ -491,12 +501,16 @@ presence.on('UpdateData', async () => {
                 ? strings.pause
                 : strings.deferred
             }
+            
 
-            // SLIDE: Watching Live
+            // SLIDE: Watching Live or Ad
             const watchingData = structuredClone(presenceData)
-            watchingData.state = channel
+            watchingData.state = bAdCountdown 
+            ? strings.ad
+            : channel
               ? strings.on.replace('{0}', strings.watchingLive).replace('{1}', channel)
               : strings.on.replace('{0}', strings.watchingLive).replace('{1}', 'Auvio')
+            
             slideshow.addSlide('03', watchingData, 5000)
           }
           else {
@@ -510,7 +524,13 @@ presence.on('UpdateData', async () => {
               ]
             }
 
-            if (video.paused) {
+            if (bAdCountdown) {
+              presenceData.smallImageKey = getLocalizedAssets(newLang, "Ad"),
+              presenceData.smallImageText = strings.ad
+
+              presenceData.startTimestamp = browsingTimestamp
+              delete presenceData.endTimestamp
+            } else if (video.paused) {
               presenceData.smallImageKey = Assets.Pause
               presenceData.smallImageText = strings.pause
 
@@ -557,6 +577,7 @@ presence.on('UpdateData', async () => {
         'chaine',
         'mot-cle',
         'premium',
+        'widget',
       ].includes(pathParts[1]!): {
       presenceData.details = strings.browsing
 
@@ -585,20 +606,25 @@ presence.on('UpdateData', async () => {
         presenceData.largeImageKey = await getThumbnail(
           getChannel(pathParts[1]!).logo,
           cropPreset.squared,
-          colorsMap.get(categoryTitle.toLowerCase().replace(/[éè]/g, 'e')) || colorsMap.get(''),
+          getColor(categoryTitle),
         )
         presenceData.largeImageText = `Catégorie ${categoryTitle} sur Auvio`
 
-        if (usePoster) {
+        if (usePoster 
+          && !['podcasts'].includes(pathParts[1]!) // TO-DO: Podcast category can cause issues
+        ) {
           useSlideshow = true
           const selector = exist('img.TileProgramPoster_hoverPicture__v5RJX')
             ? 'img.TileProgramPoster_hoverPicture__v5RJX' // If programs cover art are in portrait
-            : 'img.TileMedia_hoverPicture__RGh_m' // If programs cover art are in landscape
+            : exist('img.TileMedia_hoverPicture__RGh_m')
+              ?'img.TileMedia_hoverPicture__RGh_m' // If programs cover art are in landscape
+              : ".TileMedia_mosaic__hxuYt > span > img"
 
           // SLIDES: Samples of content in the category
+          const galleryElement = document.querySelector('.swiper-wrapper:has(:not(figure) img)') || document.querySelector(".Mosaic_mosaic__0Js0V")
           for (
             let index = 0;
-            index < document.querySelector('.swiper-wrapper')!.childElementCount;
+            index < galleryElement!.childElementCount;
             index++
           ) {
             const src = decodeURIComponent(
@@ -615,7 +641,7 @@ presence.on('UpdateData', async () => {
                 exist('img.TileProgramPoster_hoverPicture__v5RJX')
                   ? cropPreset.vertical
                   : cropPreset.horizontal,
-                colorsMap.get(categoryTitle.toLowerCase().replace(/[éè]/g, 'e')) || colorsMap.get(''),
+                  getColor(categoryTitle),
               )
               if (mediaTitle !== index.toString()) {
                 const sample = strings.on.replace('{1}', pathParts[1]!.includes('chaine') ? categoryTitle : 'Auvio')
@@ -626,6 +652,7 @@ presence.on('UpdateData', async () => {
               // SLIDE: Viewing Category
               const viewingData = structuredClone(sampleData)
               viewingData.state = strings.viewCategory.replace(':', '')
+              viewingData.largeImageKey = getChannel(categoryTitle).logo
               slideshow.addSlide(`${mediaTitle}*`, viewingData, 2500)
             }
           }
