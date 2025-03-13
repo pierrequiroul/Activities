@@ -1,12 +1,20 @@
 {
-  "$schema": "https://schemas.premid.app/metadata/1.11",
+  "$schema": "https://schemas.premid.app/metadata/1.13",
+  "apiVersion": 1,
   "author": {
     "id": "87107972676751360",
     "name": "pierrequlroule"
   },
   "service": "RTBF Auvio",
+  "altnames": [
+    "Auvio",
+    "RTBF"
+  ],
   "description": {
-    "en": "Watch and listen to replay of all RTBF programs. Watch or listen live to your TV and radio channels. Discover exclusive content."
+    "de": "Sehen und hören Sie sich die Wiederholungen aller RTBF-Sendungen an. Sehen oder hören Sie Ihre Fernseh- und Radiokanäle live. Entdecken Sie exklusive Inhalte",
+    "en": "Watch and listen to replay of all RTBF programs. Watch or listen live to your TV and radio channels. Discover exclusive content.",
+    "fr": "Regardez et écoutez en replay tous les programmes de la RTBF. Regardez ou écoutez en direct vos chaînes de télévision et de radio. Découvrez des contenus exclusifs.",
+    "nl": "Bekijk en beluister herhalingen van alle RTBF-programma's. Kijk of luister live naar je tv- en radiokanalen. Ontdek exclusieve inhoud."
   },
   "url": "auvio.rtbf.be",
   "version": "1.0.0",

@@ -117,7 +117,6 @@ export function getSetting<E extends string | boolean | number>(
 
 export enum ActivityAssets { // Other default assets can be found at index.d.ts
   Logo = 'https://imgur.com/m2gRowq.png',
-  Animated = '',
   Auvio = 'https://imgur.com/Ky3l5MZ.png',
   Binoculars = 'https://imgur.com/aF3TWVK.png',
   Privacy = 'https://imgur.com/nokHvhE.png',
