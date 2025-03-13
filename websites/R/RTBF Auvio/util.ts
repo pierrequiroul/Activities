@@ -12,30 +12,19 @@ export const stringMap = {
   searchFor: 'general.searchFor',
   browsing: 'general.browsing',
   privacy: 'general.privacy',
-  // viewing: "general.viewing",
-  viewPage: 'general.viewPage',
   viewAPage: 'general.viewAPage',
   viewAccount: 'general.viewAccount',
-  viewChannel: 'general.viewChannel',
   viewCategory: 'general.viewCategory',
   viewHome: 'general.viewHome',
-  // viewList: "netflix.viewList",
-  // viewSerie: "general.viewSerie",
-  // viewShow: "general.viewShow",
-  // viewMovie: "general.viewMovie",
   buttonViewPage: 'general.buttonViewPage',
   buttonWatchVideo: 'general.buttonWatchVideo',
   buttonWatchStream: 'general.buttonWatchStream',
-  // watching: "general.watching",
-  watchingAd: 'youtube.ad',
   watchingLive: 'general.watchingLive',
   watchingShow: 'general.watchingShow',
   watchingMovie: 'general.watchingMovie',
   live: 'general.live',
   listeningTo: 'general.listeningTo',
   waitingLive: 'general.waitingLive',
-  waitingLiveThe: 'general.waitingLiveThe',
-  home: 'twitch.home',
   ad: 'youtube.ad',
   // Custom strings
   aPodcast: 'RTBFAuvio.aPodcast',
@@ -91,9 +80,7 @@ function fetchStrings() {
 setInterval(fetchStrings, 3000)
 fetchStrings()
 
-/**
- * Sets the current language to fetch strings for and returns whether any strings are loaded.
- */
+// Sets the current language to fetch strings for and returns whether any strings are loaded.
 export function checkStringLanguage(lang: string): boolean {
   currentTargetLang = lang
   return !!strings
@@ -127,60 +114,6 @@ export function getSetting<E extends string | boolean | number>(
   startSettingGetter(setting)
   return (cachedSettings[setting] as E) ?? fallback
 }
-/*
-export function getAdditionnalStrings(
-  lang: string,
-  strings: typeof stringsMap,
-): typeof stringsMap {
-  switch (lang) {
-    case 'fr-FR': {
-      strings.deferred = 'En Différé'
-      strings.aPodcast = 'un Podcast'
-      strings.aRadio = 'une Radio'
-      strings.listening = 'Écoute'
-      strings.privacy = 'Lecture privée'
-      strings.startsIn = 'Commence dans'
-      strings.on = 'sur'
-
-      // Improved translation in context
-      strings.viewAPage = 'Regarde une page'
-      strings.waitingLive = 'Attend le démarrage du direct'
-      strings.watchingLive = 'Regarde un direct'
-      break
-    }
-    case 'nl-NL': {
-      strings.deferred = 'Uitgestelde'
-      strings.aPodcast = ''
-      strings.aRadio = ''
-      strings.listening = ''
-      strings.privacy = ''
-      strings.startsIn = ''
-      strings.on = 'op'
-      break
-    }
-    case 'de-DE': {
-      strings.deferred = 'Zeitversetzt'
-      strings.aPodcast = ''
-      strings.aRadio = ''
-      strings.listening = ''
-      strings.privacy = ''
-      strings.startsIn = ''
-      strings.on = 'auf'
-      break
-    }
-    default: {
-      strings.deferred = 'Deferred'
-      strings.aPodcast = 'a Podcast'
-      strings.aRadio = 'a Radio'
-      strings.listening = 'Listening'
-      strings.privacy = 'Private play'
-      strings.startsIn = 'Starts in'
-      strings.on = 'on'
-      break
-    }
-  }
-  return strings
-} */
 
 export enum ActivityAssets { // Other default assets can be found at index.d.ts
   Logo = 'https://imgur.com/m2gRowq.png',
@@ -201,7 +134,7 @@ export enum ActivityAssets { // Other default assets can be found at index.d.ts
   AdFr = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/5.png',
   // Channels
   LaUne = 'https://imgur.com/KKnPbmN.png',
-  LaDeux = "https://imgur.com/24c3O1i.png",
+  LaDeux = 'https://imgur.com/24c3O1i.png',
   Tipik = 'https://imgur.com/B6mKWzS.png',
   LaTrois = 'https://imgur.com/BAQ1ibT.png',
   Classic21 = 'https://imgur.com/fTIqWmj.png',
@@ -211,7 +144,7 @@ export enum ActivityAssets { // Other default assets can be found at index.d.ts
   Tarmac = 'https://imgur.com/gDCyoXm.png',
   Jam = 'https://imgur.com/fkmnPtg.png',
   Viva = 'https://imgur.com/vv3JhPF.png',
-  Vivasport = "https://imgur.com/BKrQA6n.png",
+  Vivasport = 'https://imgur.com/BKrQA6n.png',
   Ixpe = 'https://imgur.com/l9NR9Qp.png',
   MediasProx = 'https://imgur.com/N4QrJLq.png',
   AB3 = 'https://imgur.com/J78D4Xj.png',
@@ -250,14 +183,11 @@ export function exist(selector: string): boolean {
 export function limitText(input: string, maxLength = 128): string {
   const ellipsis = ' ...'
 
-  // If input is within limit, return it as is
   if (input.length <= maxLength)
     return input
 
-  // Truncate to 125 characters (leaving room for ellipsis)
   let truncated = input.slice(0, maxLength - ellipsis.length)
 
-  // If the truncated text ends mid-word, remove the partial word
   if (truncated.includes(' '))
     truncated = truncated.slice(0, truncated.lastIndexOf(' '))
 
@@ -306,89 +236,92 @@ export function formatDuration(time: string | number) {
 }
 
 export function getColor(string: string) {
-  const formattedString = string.toLowerCase().replace(/[éè]/g, 'e').replace(" ","").replace("-","")
+  const formattedString = string.toLowerCase().replaceAll(/[éè]/g, 'e').replaceAll(' ', '').replaceAll('-', '')
   const colorsMap = new Map<string, string | number[][]>([
     /* Plain color in hexadecimal ex: #ffaa00
     Gradient colors in RGB ex: [R, G, B, GradientOffset] */
-      // Default colors
-      ['', '#ffcc00'],
-      ['default', '#ffcc00'],
-      // Category colors
-      ['series', '#b92561'],
-      ['films', '#7e55a5'],
+    // Default colors
+    ['', '#ffcc00'],
+    ['default', '#ffcc00'],
+    // Category colors
+    ['series', '#b92561'],
+    ['films', '#7e55a5'],
+    [
+      'animes',
       [
-        'animes',
-        [
-          [255, 226, 63, 0.2],
-          [255, 9, 119, 0.5],
-          [59, 124, 154, 0.75],
-        ],
+        [255, 226, 63, 0.2],
+        [255, 9, 119, 0.5],
+        [59, 124, 154, 0.75],
       ],
-      ['sport', '#15c6a4'],
-      ['info', '#109aa9'],
-      ['kids', '#434b66'],
-      ['documentaires', '#345a4a'],
-      ['divertissement', '#444d90'],
+    ],
+    ['sport', '#15c6a4'],
+    ['info', '#109aa9'],
+    ['kids', '#434b66'],
+    ['documentaires', '#345a4a'],
+    ['divertissement', '#444d90'],
+    [
+      'noirjaunebelge',
       [
-        'noir jaune belge',
-        [
-          [7, 7, 7, 0.15],
-          [198, 170, 34, 0.45],
-          [194, 57, 57, 0.8],
-        ],
+        [7, 7, 7, 0.15],
+        [198, 170, 34, 0.45],
+        [194, 57, 57, 0.8],
       ],
-      ['lifestyle', '#714e6e'],
-      ['culture', '#863d67'],
-      ['musique', '#4a6f6f'],
+    ],
+    ['lifestyle', '#714e6e'],
+    ['culture', '#863d67'],
+    ['musique', '#4a6f6f'],
+    [
+      'lgbtqia+',
       [
-        'lgbtqia+',
-        [
-          [242, 130, 10, 0.2],
-          [142, 171, 102, 0.3],
-          [156, 60, 115, 0.6],
-          [68, 37, 128, 0.8],
-        ],
+        [228, 3, 3, 0],
+        [255, 140, 0, 0.2],
+        [255, 237, 0, 0.4],
+        [0, 128, 38, 0.6],
+        [0, 76, 255, 0.8],
+        [115, 41, 130, 1],
       ],
-      ['decodagemedias', '#b26e38'],
-      ['archivessonuma', '#663c2a'],
-      ['direct', '#e55232'],
-      // Channel colors
-      ['laune', '#ee372b'],
-      ['tipik', '#0df160'],
-      ['ladeux', '#ec088f'],
-      ['latrois', '#9b49a1'],
-      ['classic21', '#8d0282'],
-      ['lapremiere', '#083e7a'],
-      ['vivacite', '#f93308'],
-      ['viva', '#f93308'],
-      ['vivasport', '#f93308'],
-      ['musiq3', '#d63c4d'],
-      ['tarmac', '#222222'],
-      ['jam', '#222222'],
-      ['ixpe', '#f93308'],
-      ['ab3', '#565656'],
-      ['abxplore', '#268ca0'],
-      ['ln24', '#094c5d'],
-      ['funradio', '#ff087c'],
-      ['nrj', '#e70815'],
-      ['arte', '#f84c2f'],
-      ['bruzz', '#ee2c40'],
-      ['brf', '#00325f'],
-      ['kids', '#f93308'],
-    ])
-    return colorsMap.get(formattedString) ?? colorsMap.get("")
+    ],
+    ['decodagemedias', '#b26e38'],
+    ['archivessonuma', '#663c2a'],
+    ['direct', '#e55232'],
+    // Channel colors
+    ['laune', '#ee372b'],
+    ['tipik', '#0df160'],
+    ['ladeux', '#ec088f'],
+    ['latrois', '#9b49a1'],
+    ['classic21', '#8d0282'],
+    ['lapremiere', '#083e7a'],
+    ['vivacite', '#f93308'],
+    ['viva', '#f93308'],
+    ['vivasport', '#f93308'],
+    ['musiq3', '#d63c4d'],
+    ['tarmac', '#222222'],
+    ['jam', '#222222'],
+    ['ixpe', '#f93308'],
+    ['ab3', '#565656'],
+    ['abxplore', '#268ca0'],
+    ['ln24', '#094c5d'],
+    ['funradio', '#ff087c'],
+    ['nrj', '#e70815'],
+    ['arte', '#f84c2f'],
+    ['bruzz', '#ee2c40'],
+    ['brf', '#00325f'],
+    ['kids', '#f93308'],
+    ['mediasproximite', '#07538b'],
+  ])
+  return colorsMap.get(formattedString) ?? colorsMap.get('')
 }
-
 
 interface ChannelInfo {
   channel: string
   type: ActivityType
   logo: ActivityAssets
-  color: string | number[][] // Optional property
+  color: string | number[][]
+  found: boolean
 }
 
 export function getChannel(channel: string): ChannelInfo {
-  const channelFormatted = channel.toLowerCase().replace(/[éè]/g, 'e').replace('-', '').replace(' ', '')
+  const channelFormatted = channel.toLowerCase().replaceAll(/[éè]/g, 'e').replaceAll('-', '').replaceAll(' ', '')
   switch (true) {
     case ['laune'].includes(channelFormatted): {
       return {
@@ -396,6 +329,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.LaUne,
         color: getColor('la une')!,
+        found: true,
       }
     }
     case ['ladeux'].includes(channelFormatted): {
@@ -404,6 +338,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.LaDeux,
         color: getColor('la deux')!,
+        found: true,
       }
     }
     case ['tipik'].includes(channelFormatted): {
@@ -412,6 +347,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.Tipik,
         color: getColor('tipik')!,
+        found: true,
       }
     }
     case ['latrois'].includes(channelFormatted): {
@@ -420,6 +356,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.LaTrois,
         color: getColor('la trois')!,
+        found: true,
       }
     }
     case ['classic21', 'classic'].includes(channelFormatted): {
@@ -428,6 +365,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Listening,
         logo: ActivityAssets.Classic21,
         color: getColor('classic 21')!,
+        found: true,
       }
     }
     case ['lapremiere'].includes(channelFormatted): {
@@ -436,6 +374,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Listening,
         logo: ActivityAssets.LaPremiere,
         color: getColor('la premiere')!,
+        found: true,
       }
     }
     case ['vivacite'].includes(channelFormatted): {
@@ -444,6 +383,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Listening,
         logo: ActivityAssets.Vivacite,
         color: getColor('vivacite')!,
+        found: true,
       }
     }
     case ['musiq3'].includes(channelFormatted): {
@@ -452,6 +392,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Listening,
         logo: ActivityAssets.Musiq3,
         color: getColor('musiq3')!,
+        found: true,
       }
     }
     case ['tarmac'].includes(channelFormatted): {
@@ -460,6 +401,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Listening,
         logo: ActivityAssets.Tarmac,
         color: getColor('tarmac')!,
+        found: true,
       }
     }
     case ['jam'].includes(channelFormatted): {
@@ -468,6 +410,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Listening,
         logo: ActivityAssets.Jam,
         color: getColor('jam')!,
+        found: true,
       }
     }
     case ['viva'].includes(channelFormatted): {
@@ -476,6 +419,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Listening,
         logo: ActivityAssets.Viva,
         color: getColor('viva')!,
+        found: true,
       }
     }
     case ['ixpe'].includes(channelFormatted): {
@@ -484,6 +428,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.Ixpe,
         color: getColor('ixpe')!,
+        found: true,
       }
     }
     case ['ab3'].includes(channelFormatted): {
@@ -492,6 +437,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.AB3,
         color: getColor('ab3')!,
+        found: true,
       }
     }
     case ['abxplore'].includes(channelFormatted): {
@@ -500,6 +446,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.ABXPLORE,
         color: getColor('abxplore')!,
+        found: true,
       }
     }
     case ['ln24'].includes(channelFormatted): {
@@ -508,6 +455,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.LN24,
         color: getColor('ln24')!,
+        found: true,
       }
     }
     case ['funradio'].includes(channelFormatted): {
@@ -516,6 +464,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.FunRadio,
         color: getColor('funradio')!,
+        found: true,
       }
     }
     case ['nrj'].includes(channelFormatted): {
@@ -524,6 +473,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.NRJ,
         color: getColor('nrj')!,
+        found: true,
       }
     }
     case ['arte'].includes(channelFormatted): {
@@ -532,6 +482,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.Arte,
         color: getColor('arte')!,
+        found: true,
       }
     }
     case ['bruzz'].includes(channelFormatted): {
@@ -540,6 +491,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.BRUZZ,
         color: getColor('bruzz')!,
+        found: true,
       }
     }
     case ['brf'].includes(channelFormatted): {
@@ -548,6 +500,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.BRF,
         color: getColor('brf')!,
+        found: true,
       }
     }
     case ['kids'].includes(channelFormatted): {
@@ -556,6 +509,7 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.Kids,
         color: getColor('kids')!,
+        found: true,
       }
     }
     case [
@@ -577,7 +531,8 @@ export function getChannel(channel: string): ChannelInfo {
         channel: 'Médias de proximité',
         type: ActivityType.Watching,
         logo: ActivityAssets.MediasProx,
-        color: getColor('mediaproximite')!,
+        color: getColor('mediasproximite')!,
+        found: true,
       }
     }
     default: {
@@ -586,12 +541,11 @@ export function getChannel(channel: string): ChannelInfo {
         type: ActivityType.Watching,
         logo: ActivityAssets.Auvio,
         color: getColor('')!,
+        found: false,
       }
     }
   }
 }
-
-// Adapted veryCrunchy's function from YouTube Presence https://github.com/PreMiD/Presences/pull/8000
 
 export const cropPreset = {
   // Crop values in percent correspond to Left, Right, Top, Bottom.

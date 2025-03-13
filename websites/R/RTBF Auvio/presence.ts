@@ -63,129 +63,127 @@ presence.on('UpdateData', async () => {
   let useSlideshow = false
 
   switch (true) {
-    case exist('#audioPlayerContainer'): {
+    case exist('#audioPlayerContainer') && document.querySelector('#PlayerUIAudioPlayPauseButton')?.getAttribute('aria-label') === 'pause': {
       /* NOTE: PODCAST PLAYER
       NOTE: When a podcast is played, it appears in an audio player at the bottom of the screen.
       Once a podcast has been launched, it is visible at all times throughout the site until the website is refreshed. */
 
-      if (document.querySelector('#PlayerUIAudioPlayPauseButton')?.getAttribute('aria-label') === 'pause') {
-        const firstLine = document.querySelector('.PlayerUIAudio_titleText__HV4Y2')?.textContent ?? ''
-        const secondLine = document.querySelector('.PlayerUIAudio_subtitle__uhGA4')?.textContent ?? ''
-        const duration = document.querySelector('.PlayerUIAudio_duration__n7hxV')?.textContent ?? '0'
+      const firstLine = document.querySelector('.PlayerUIAudio_titleText__HV4Y2')?.textContent ?? ''
+      const secondLine = document.querySelector('.PlayerUIAudio_subtitle__uhGA4')?.textContent ?? ''
+      const duration = document.querySelector('.PlayerUIAudio_duration__n7hxV')?.textContent ?? '0'
 
-        if (duration === 'DIRECT' || exist('#PlayerUIAudioGoToLiveButton')) {
-          /* ANCHOR: RADIO LIVE FEED
+      if (duration === 'DIRECT' || exist('#PlayerUIAudioGoToLiveButton')) {
+        /* ANCHOR: RADIO LIVE FEED
           NOTE: Direct radios are in the same place as podcasts, and play in the same audio player.
           The only difference is in the duration field, which is equal to “direct”, or the back to direct button if in deferred mode. */
 
-          const channelName = (firstLine.includes(' - ') ? firstLine.split(' - ')[0] : firstLine.match(/^\w+/)?.[0])!
-          const coverArt = decodeURIComponent(
-            document.querySelector('.PlayerUIAudio_logoContainer__6ffGY > span > img')?.getAttribute('src')?.replace('/_next/image?url=', '').split('&w')[0] ?? '',
-          )
+        const channelName = (firstLine.includes(' - ') ? firstLine.split(' - ')[0] : firstLine.match(/^\w+/)?.[0])!
+        const coverArt = decodeURIComponent(
+          document.querySelector('.PlayerUIAudio_logoContainer__6ffGY > span > img')?.getAttribute('src')?.replace('/_next/image?url=', '').split('&w')[0] ?? '',
+        )
 
-          presenceData.name = usePrivacyMode || !usePresenceName ? strings.aRadio : getChannel(channelName).channel
-          presenceData.type = ActivityType.Listening
+        presenceData.name = usePrivacyMode || !usePresenceName ? strings.aRadio : getChannel(channelName).channel
+        presenceData.type = ActivityType.Listening
 
-          presenceData.smallImageKey = usePrivacyMode
-            ? ActivityAssets.Privacy
-            : ActivityAssets.ListeningLive
-          presenceData.smallImageText = usePrivacyMode
-            ? strings.privatePlay
-            : strings.play
+        presenceData.smallImageKey = usePrivacyMode
+          ? ActivityAssets.Privacy
+          : ActivityAssets.ListeningLive
+        presenceData.smallImageText = usePrivacyMode
+          ? strings.privatePlay
+          : strings.play
 
-          presenceData.startTimestamp = browsingTimestamp
+        presenceData.startTimestamp = browsingTimestamp
 
-          if (usePrivacyMode) {
-            presenceData.details = strings.listeningTo.replace('{0}', ' ').replace('{1}', strings.aRadio)
-          }
-          else {
-            /* ANCHOR: RADIO SHOW NAME
+        if (usePrivacyMode) {
+          presenceData.details = strings.listeningTo.replace('{0}', ' ').replace('{1}', strings.aRadio)
+        }
+        else {
+          /* ANCHOR: RADIO SHOW NAME
             The first line of the audio player is the name of the program with which it is presented. */
 
-            useSlideshow = true
-            const showData = structuredClone(presenceData) // Deep copy
+          useSlideshow = true
+          const showData = structuredClone(presenceData) // Deep copy
 
-            showData.details = firstLine.replace(/\([^()]+\)(?!.*\([^()]+\))/, '').trim() || firstLine
-            showData.state = (firstLine.includes(' - ') ? firstLine.split(' - ')[1]!.match(/\(([^()]+)\)(?!.*\([^()]+\))/)?.pop() : '') || ''
+          showData.details = firstLine.replace(/\([^()]+\)(?!.*\([^()]+\))/, '').trim() || firstLine
+          showData.state = (firstLine.includes(' - ') ? firstLine.split(' - ')[1]!.match(/\(([^()]+)\)(?!.*\([^()]+\))/)?.pop() : '') || ''
 
-            showData.largeImageKey = coverArt.includes(
-              'https://ds.static.rtbf.be/default/',
-            ) // Must not match default auvio image https://ds.static.rtbf.be/default/image/770x770/default-auvio_0.jpg
-              ? getChannel(channelName).logo
-              : await getThumbnail(
-                coverArt,
-                cropPreset.squared,
-                getChannel(channelName).color,
-              )
-            showData.largeImageText += ' - Radio'
+          showData.largeImageKey = coverArt.includes(
+            'https://ds.static.rtbf.be/default/',
+          ) // Must not match default auvio image https://ds.static.rtbf.be/default/image/770x770/default-auvio_0.jpg
+            ? getChannel(channelName).logo
+            : await getThumbnail(
+              coverArt,
+              cropPreset.squared,
+              getChannel(channelName).color,
+            )
+          showData.largeImageText += ' - Radio'
 
-            if (showData.state)
-              slideshow.addSlide('SHOW', showData, 5000)
+          if (showData.state)
+            slideshow.addSlide('SHOW', showData, 5000)
 
-            /* ANCHOR: RADIO SONG NAME
+          /* ANCHOR: RADIO SONG NAME
             The second line shows the music currently playing on the radio, with the artist in brackets.
             Sometimes no music is played and it's just an audio program. */
 
-            const songData = structuredClone(presenceData) // Deep copy
+          const songData = structuredClone(presenceData) // Deep copy
 
-            if (secondLine.match(/\([^()]+\)(?!.*\([^()]+\))/)) {
-              // If it has parentheses, it's probably a song.
-              songData.details = secondLine
-                .replace(/\([^()]+\)(?!.*\([^()]+\))/, '')
-                .trim()
-              songData.state = secondLine.match(/\(([^()]+)\)(?!.*\([^()]+\))/)!.pop() || strings.live
-            }
-            else {
-              // If it is not, it's probably an audio program
-              songData.details = secondLine.length > 30 ? secondLine.slice(0, secondLine.slice(0, 30).lastIndexOf(' ')) : secondLine
-              songData.state = secondLine.length > 30 ? secondLine.slice(songData.details.length).trim() : ''
-            }
-
-            songData.largeImageKey = firstLine.includes(' - ') ? getChannel(channelName).logo : await getThumbnail(coverArt, cropPreset.squared, getChannel(channelName).color)
-            songData.largeImageText += ' - Radio'
-
-            slideshow.addSlide('SONG', songData, 5000)
+          if (secondLine.match(/\([^()]+\)(?!.*\([^()]+\))/)) {
+            // If it has parentheses, it's probably a song.
+            songData.details = secondLine
+              .replace(/\([^()]+\)(?!.*\([^()]+\))/, '')
+              .trim()
+            songData.state = secondLine.match(/\(([^()]+)\)(?!.*\([^()]+\))/)!.pop() || strings.live
           }
+          else {
+            // If it is not, it's probably an audio program
+            songData.details = secondLine.length > 30 ? secondLine.slice(0, secondLine.slice(0, 30).lastIndexOf(' ')) : secondLine
+            songData.state = secondLine.length > 30 ? secondLine.slice(songData.details.length).trim() : ''
+          }
+
+          songData.largeImageKey = firstLine.includes(' - ') ? getChannel(channelName).logo : await getThumbnail(coverArt, cropPreset.squared, getChannel(channelName).color)
+          songData.largeImageText += ' - Radio'
+
+          slideshow.addSlide('SONG', songData, 5000)
         }
-        else {
-          /* ANCHOR:  VOD PODCAST
+      }
+      else {
+        /* ANCHOR:  VOD PODCAST
 
           Podcasts can be original programs or past broadcasts. */
 
-          presenceData.name = usePresenceName && !usePrivacyMode ? firstLine : strings.aPodcast
-          presenceData.type = ActivityType.Listening
+        presenceData.name = usePresenceName && !usePrivacyMode ? firstLine : strings.aPodcast
+        presenceData.type = ActivityType.Listening
 
-          presenceData.details = !usePrivacyMode
-            ? firstLine
-            : strings.listeningTo.replace('{0}', ' ').replace('{1}', strings.aPodcast)
+        presenceData.details = !usePrivacyMode
+          ? firstLine
+          : strings.listeningTo.replace('{0}', ' ').replace('{1}', strings.aPodcast)
 
-          presenceData.state = !usePrivacyMode ? secondLine : ''
+        presenceData.state = !usePrivacyMode ? secondLine : ''
 
-          presenceData.smallImageKey = usePrivacyMode
-            ? ActivityAssets.Privacy
-            : ActivityAssets.ListeningVOD
-          presenceData.smallImageText = usePrivacyMode
-            ? strings.privatePlay
-            : strings.play;
+        presenceData.smallImageKey = usePrivacyMode
+          ? ActivityAssets.Privacy
+          : ActivityAssets.ListeningVOD
+        presenceData.smallImageText = usePrivacyMode
+          ? strings.privatePlay
+          : strings.play;
 
-          [presenceData.startTimestamp, presenceData.endTimestamp] = getTimestamps(
-            timestampFromFormat(duration.split('/')?.[0] ?? duration),
-            timestampFromFormat(duration.split('/')?.[1] ?? duration),
+        [presenceData.startTimestamp, presenceData.endTimestamp] = getTimestamps(
+          timestampFromFormat(duration.split('/')?.[0] ?? duration),
+          timestampFromFormat(duration.split('/')?.[1] ?? duration),
+        )
+
+        if (usePoster) {
+          presenceData.largeImageKey = await getThumbnail(
+            decodeURIComponent(
+              // the url is a weird relative encoded link
+              document.querySelector('.PlayerUIAudio_logoContainer__6ffGY > span > img')!.getAttribute('src')!.replace('/_next/image?url=', '').split('&w')[0]!,
+            ),
+            cropPreset.squared,
+            getChannel('default').color,
           )
-
-          if (usePoster) {
-            presenceData.largeImageKey = await getThumbnail(
-              decodeURIComponent(
-                // the url is a weird relative encoded link
-                document.querySelector('.PlayerUIAudio_logoContainer__6ffGY > span > img')!.getAttribute('src')!.replace('/_next/image?url=', '').split('&w')[0]!,
-              ),
-              cropPreset.squared,
-              getChannel('default').color,
-            )
-          }
-          if (!usePrivacyMode)
-            presenceData.largeImageText += ' - Podcasts'
         }
+        if (!usePrivacyMode)
+          presenceData.largeImageText += ' - Podcasts'
       }
       break
     }
@@ -199,7 +197,7 @@ presence.on('UpdateData', async () => {
         ) as HTMLInputElement
       ).value
 
-      if (searchQuery !== '') {
+      if (!usePrivacyMode && searchQuery !== '') {
         presenceData.details = strings.browsing
         presenceData.state = `${strings.searchFor} ${searchQuery}`
       }
@@ -240,6 +238,9 @@ presence.on('UpdateData', async () => {
     case ['media', 'live', 'emission'].includes(pathParts[1]!): {
       // NOTE: MEDIA PAGE
       if (usePrivacyMode) {
+        presenceData.smallImageKey = ActivityAssets.Privacy
+        presenceData.smallImageText = strings.privacy
+
         if (!exist('#player')) {
           presenceData.details = strings.browsing
           presenceData.state = strings.viewAPage
@@ -259,7 +260,7 @@ presence.on('UpdateData', async () => {
               break
             }
           }
-          presenceData.details = 'watch'
+          presenceData.details = 'RTBF Auvio'
         }
       }
       else {
@@ -272,7 +273,7 @@ presence.on('UpdateData', async () => {
 
         let mediaType, description, image, channel, duration, category, scheduledFrom, scheduledTo, waitTime, remainingTime
         if (response) {
-          // Populating metadatas variables  && metadatas.status === "200"
+          // Populating metadatas variables
 
           mediaType = metadatas.data.pageType
             ?? metadatas.data.content?.pageType
@@ -403,6 +404,8 @@ presence.on('UpdateData', async () => {
           if (channel || duration || category) {
             const infosData = structuredClone(presenceData)
             infosData.state = [channel, duration, category].filter(Boolean).join(' - ') // "La Une - 51min - Policier"
+            if (channel && getChannel(channel).found)
+              infosData.largeImageKey = getChannel(channel).logo
             slideshow.addSlide('02', infosData, 5000)
           }
 
@@ -439,7 +442,7 @@ presence.on('UpdateData', async () => {
 
           const videoArray = document.querySelectorAll('div.redbee-player-media-container > video')
           const video = videoArray[videoArray.length - 1] as HTMLVideoElement
-          const bAdCountdown = exist(".sas-ctrl-countdown.sas-enable")
+          const bAdCountdown = exist('.sas-ctrl-countdown.sas-enable')
 
           // BASE SLIDES
           if (usePresenceName)
@@ -461,7 +464,7 @@ presence.on('UpdateData', async () => {
 
           // LIVE MEDIA PLAYER
           const liveDelay = (Math.abs(Math.floor(new Date().getTime() / 1000 - video.currentTime)))
-          if (mediaType === 'LIVE' 
+          if (mediaType === 'LIVE'
             || (liveDelay < 3600) // Sometimes lives don't follow established codes
           ) {
             if (usePresenceName && useChannelName && channel !== '')
@@ -477,12 +480,13 @@ presence.on('UpdateData', async () => {
             }
 
             if (bAdCountdown) {
-              presenceData.smallImageKey = getLocalizedAssets(newLang, "Ad"),
+              presenceData.smallImageKey = getLocalizedAssets(newLang, 'Ad')
               presenceData.smallImageText = strings.ad
 
               presenceData.startTimestamp = browsingTimestamp
               delete presenceData.endTimestamp
-            } else if (liveDelay < 60) { // Live
+            }
+            else if (liveDelay < 60) { // Live
               presenceData.smallImageKey = video.paused
                 ? Assets.Pause
                 : ActivityAssets.LiveAnimated
@@ -501,16 +505,15 @@ presence.on('UpdateData', async () => {
                 ? strings.pause
                 : strings.deferred
             }
-            
 
             // SLIDE: Watching Live or Ad
             const watchingData = structuredClone(presenceData)
-            watchingData.state = bAdCountdown 
-            ? strings.ad
-            : channel
-              ? strings.on.replace('{0}', strings.watchingLive).replace('{1}', channel)
-              : strings.on.replace('{0}', strings.watchingLive).replace('{1}', 'Auvio')
-            
+            watchingData.state = bAdCountdown
+              ? strings.ad
+              : channel
+                ? strings.on.replace('{0}', strings.watchingLive).replace('{1}', channel)
+                : strings.on.replace('{0}', strings.watchingLive).replace('{1}', 'Auvio')
+
             slideshow.addSlide('03', watchingData, 5000)
           }
           else {
@@ -525,12 +528,13 @@ presence.on('UpdateData', async () => {
             }
 
             if (bAdCountdown) {
-              presenceData.smallImageKey = getLocalizedAssets(newLang, "Ad"),
+              presenceData.smallImageKey = getLocalizedAssets(newLang, 'Ad')
               presenceData.smallImageText = strings.ad
 
               presenceData.startTimestamp = browsingTimestamp
               delete presenceData.endTimestamp
-            } else if (video.paused) {
+            }
+            else if (video.paused) {
               presenceData.smallImageKey = Assets.Pause
               presenceData.smallImageText = strings.pause
 
@@ -557,6 +561,8 @@ presence.on('UpdateData', async () => {
           if (channel || duration || category) {
             const infosData = structuredClone(presenceData)
             infosData.state = [channel, duration, category].filter(Boolean).join(' - ') // "La Une - 51min - Policier"
+            if (channel && getChannel(channel).found)
+              infosData.largeImageKey = getChannel(channel).logo
             slideshow.addSlide('02', infosData, 5000)
           }
         }
@@ -596,7 +602,7 @@ presence.on('UpdateData', async () => {
         // ANCHOR: CATEGORY AND CHANNEL PAGE
         const categoryTitle = document.querySelector('h1')!.textContent!.length < 20 // Sometimes the title is way too long
           ? document.querySelector('h1')!.textContent!
-          : document.querySelector('li:nth-last-child() > span')!.textContent! // Last of breadcrumb list
+          : document.querySelector('nav[aria-label="Fil d\'ariane"] > ul > li:nth-last-child(1) > span')!.textContent! // Last of breadcrumb list
 
         presenceData.details = pathParts[1] === 'podcasts' ? `${categoryTitle} & Radios` : categoryTitle
 
@@ -610,18 +616,27 @@ presence.on('UpdateData', async () => {
         )
         presenceData.largeImageText = `Catégorie ${categoryTitle} sur Auvio`
 
-        if (usePoster 
+        if (useButtons) {
+          presenceData.buttons = [
+            {
+              label: strings.buttonViewPage,
+              url: href,
+            },
+          ]
+        }
+
+        if (usePoster
           && !['podcasts'].includes(pathParts[1]!) // TO-DO: Podcast category can cause issues
         ) {
           useSlideshow = true
           const selector = exist('img.TileProgramPoster_hoverPicture__v5RJX')
             ? 'img.TileProgramPoster_hoverPicture__v5RJX' // If programs cover art are in portrait
             : exist('img.TileMedia_hoverPicture__RGh_m')
-              ?'img.TileMedia_hoverPicture__RGh_m' // If programs cover art are in landscape
-              : ".TileMedia_mosaic__hxuYt > span > img"
+              ? 'img.TileMedia_hoverPicture__RGh_m' // If programs cover art are in landscape
+              : '.TileMedia_mosaic__hxuYt > span > img'
 
           // SLIDES: Samples of content in the category
-          const galleryElement = document.querySelector('.swiper-wrapper:has(:not(figure) img)') || document.querySelector(".Mosaic_mosaic__0Js0V")
+          const galleryElement = document.querySelector('.swiper-wrapper:has(:not(figure) img)') || document.querySelector('.Mosaic_mosaic__0Js0V')
           for (
             let index = 0;
             index < galleryElement!.childElementCount;
@@ -641,7 +656,7 @@ presence.on('UpdateData', async () => {
                 exist('img.TileProgramPoster_hoverPicture__v5RJX')
                   ? cropPreset.vertical
                   : cropPreset.horizontal,
-                  getColor(categoryTitle),
+                getColor(categoryTitle),
               )
               if (mediaTitle !== index.toString()) {
                 const sample = strings.on.replace('{1}', pathParts[1]!.includes('chaine') ? categoryTitle : 'Auvio')
@@ -652,19 +667,11 @@ presence.on('UpdateData', async () => {
               // SLIDE: Viewing Category
               const viewingData = structuredClone(sampleData)
               viewingData.state = strings.viewCategory.replace(':', '')
-              viewingData.largeImageKey = getChannel(categoryTitle).logo
+              if (getChannel(categoryTitle).found)
+                viewingData.largeImageKey = getChannel(categoryTitle).logo
               slideshow.addSlide(`${mediaTitle}*`, viewingData, 2500)
             }
           }
-        }
-
-        if (useButtons) {
-          presenceData.buttons = [
-            {
-              label: strings.buttonViewPage,
-              url: href,
-            },
-          ]
         }
       }
       break
@@ -673,7 +680,6 @@ presence.on('UpdateData', async () => {
     // In case we need a default
     default: {
       presenceData.details = strings.viewAPage
-      presenceData.state = pathname
       break
     }
   }
