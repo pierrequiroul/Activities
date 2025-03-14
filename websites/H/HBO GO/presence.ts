@@ -1,57 +1,64 @@
+import { ActivityType, Assets } from 'premid'
+
 const presence = new Presence({
-		clientId: "605437254776651786",
-	}),
-	strings = presence.getStrings({
-		play: "general.playing",
-		pause: "general.paused",
-	});
+  clientId: '605437254776651786',
+})
+const strings = presence.getStrings({
+  play: 'general.playing',
+  pause: 'general.paused',
+})
 
-presence.on("UpdateData", async () => {
-	const presenceData: PresenceData = {
-			largeImageKey:
-				"https://cdn.rcd.gg/PreMiD/websites/H/HBO%20GO/assets/logo.png",
-		},
-		video: HTMLVideoElement = document.querySelector(
-			"#hbo-sdk--controller-container #hbo-sdk--controller-osd #hbo-sdk--vid #hbo-sdk--vid_Clpp_html5_mse_smooth_api"
-		);
-	if (
-		(document.querySelector(
-			"#hbo-sdk--controller-container #hbo-sdk--controller-osd #hbo-sdk--vid #hbo-sdk--vid_Clpp_html5_mse_smooth_api"
-		) === null &&
-			document.querySelector("#hbo-sdk--player-title > div.content-title") ===
-				null) ||
-		!video
-	) {
-		presenceData.details = "Browsing...";
-		presenceData.startTimestamp = Math.floor(Date.now() / 1000);
+function convertToTitleCase(str: string): string {
+  if (!str)
+    return ''
 
-		return presence.setActivity(presenceData);
-	}
+  return str.toLowerCase().replace(/\b\w/g, s => s.toUpperCase())
+}
 
-	if (!isNaN(video.duration)) {
-		//* Get required tags
-		const title: HTMLElement = document.querySelector(
-			"#hbo-sdk--player-title > div.content-title"
-		);
-		presenceData.details = "Watching:";
-		presenceData.state = title.textContent;
-		presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Play;
-		presenceData.smallImageText = video.paused
-			? (await strings).pause
-			: (await strings).play;
-		[presenceData.startTimestamp, presenceData.endTimestamp] =
-			presence.getTimestamps(
-				Math.floor(video.currentTime),
-				Math.floor(video.duration)
-			);
+presence.on('UpdateData', async () => {
+  const presenceData: PresenceData = {
+    details: 'Browsing...',
+    largeImageKey: 'https://cdn.rcd.gg/PreMiD/websites/H/HBO%20GO/assets/logo.png',
+    type: ActivityType.Watching,
+  }
+  const video = document.querySelector<HTMLVideoElement>('video')
 
-		//* Remove timestamps if paused
-		if (video.paused) {
-			delete presenceData.startTimestamp;
-			delete presenceData.endTimestamp;
-		}
+  if (video && !Number.isNaN(video.duration) && !!document.querySelector('div.movie-title')) {
+    const title = convertToTitleCase(
+      document.querySelector('div.movie-title')!.textContent!,
+    )
+    if (document.location.pathname.includes('/series/')) {
+      const match = title.match(
+        /(?<series>.+?)\sS(?<season>\d+)\s(?<episode>\d{2})(?::\s*(?<title>.+))?/,
+      )!
 
-		//* If tags are not "null"
-		if (title.textContent) presence.setActivity(presenceData, !video.paused);
-	} else presence.setActivity();
-});
+      match.groups!.episode = Number.parseInt(match.groups!.episode!).toString()
+
+      presenceData.name = match.groups!.series
+      presenceData.details = match.groups!.title || `Episode ${match.groups!.episode}`
+      presenceData.state = `Season ${match.groups!.season}, Episode ${match.groups!.episode}`
+    }
+    else {
+      presenceData.details = title
+      presenceData.state = document.location.pathname.includes('/movies/')
+        ? 'Movie'
+        : 'Extra'
+    }
+
+    presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Play
+    presenceData.smallImageText = video.paused
+      ? (await strings).pause
+      : (await strings).play;
+    [presenceData.startTimestamp, presenceData.endTimestamp] = presence.getTimestamps(
+      Math.floor(video.currentTime),
+      Math.floor(video.duration),
+    )
+
+    if (video.paused) {
+      delete presenceData.startTimestamp
+      delete presenceData.endTimestamp
+    }
+  }
+
+  presence.setActivity(presenceData)
+})

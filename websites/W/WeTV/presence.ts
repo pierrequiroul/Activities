@@ -1,80 +1,77 @@
-class WeTV extends Presence {
-	constructor(options: PresenceOptions) {
-		super(options);
-	}
+import { ActivityType } from 'premid'
 
-	getTitle() {
-		return JSON.parse(
-			document.querySelector('[type="application/ld+json"]').textContent
-		)["@graph"][0].name;
-	}
-
-	getMovieTitle() {
-		return document.querySelector(".play-relevant__link").getAttribute("title");
-	}
-
-	getEpisodeTitle() {
-		const Element = document.querySelector(
-			".play-relevant__item.play-relevant__item--selected"
-		);
-
-		if (Element) return Element.children[2].textContent;
-	}
-
-	getEpisodeNumber() {
-		return document
-			.querySelector(".play-video__item.play-video__item--selected")
-			?.textContent.match(/[1-9][0-9]?[0-9]?/)[0];
-	}
-
-	isMovie() {
-		return this.getTitle() === this.getMovieTitle();
-	}
-
-	isClip() {
-		return this.getTitle() !== this.getEpisodeTitle();
-	}
+enum ActivityAssets {
+  Play = 'https://cdn.rcd.gg/PreMiD/websites/W/WeTV/assets/0.png',
+  Pause = 'https://cdn.rcd.gg/PreMiD/websites/W/WeTV/assets/1.png',
+  Search = 'https://cdn.rcd.gg/PreMiD/websites/W/WeTV/assets/2.png',
 }
 
-const presence = new WeTV({
-	clientId: "840271335183351902",
-});
+let parsedData: {
+  props?: {
+    pageProps: {
+      data: string
+    }
+  }
+  coverInfo?: {
+    posterVt: string
+  }
+}
 
-presence.on("UpdateData", async () => {
-	const presenceData: PresenceData = {
-		details: "Browsing...",
-		largeImageKey: "https://cdn.rcd.gg/PreMiD/websites/W/WeTV/assets/logo.png",
-		smallImageKey: Assets.Search,
-	};
+const presence = new Presence({
+  clientId: '840271335183351902',
+})
 
-	if (document.location.pathname.includes("/play/")) {
-		const video = document.querySelector("video");
+presence.on('UpdateData', async () => {
+  const presenceData: PresenceData = {
+    details: 'Browsing...',
+    largeImageKey: 'https://cdn.rcd.gg/PreMiD/websites/W/WeTV/assets/logo.png',
+    type: ActivityType.Watching,
+    smallImageKey: ActivityAssets.Search,
+  }
 
-		if (video) {
-			presenceData.details = presence.getTitle();
-			[presenceData.startTimestamp, presenceData.endTimestamp] =
-				presence.getTimestampsfromMedia(video);
+  if (document.location.pathname.includes('/play/')) {
+    const video = document.querySelector('video')
+    const nextdata = document.querySelector('#__NEXT_DATA__')
 
-			presenceData.smallImageKey = video.paused ? Assets.Pause : Assets.Play;
-			presenceData.smallImageText = video.paused ? "Paused" : "Playing";
+    if (nextdata && !parsedData) {
+      parsedData = JSON.parse(nextdata.textContent ?? '')
+      parsedData = JSON.parse(parsedData.props?.pageProps?.data ?? '')
+    }
 
-			if (video.paused) delete presenceData.endTimestamp;
+    if (video) {
+      const episodeNumber = document.querySelector(
+        'li.play-video__item.play-video__item--selected',
+      )
+      const episodeTitle = document.querySelector(
+        'li.play-relevant__item.play-relevant__item--selected',
+      )
 
-			if (presence.isMovie()) {
-				presenceData.state = "Movie";
+      presenceData.details = document.querySelector(
+        'div.play-sidebar__title',
+      )?.textContent
 
-				if (presence.isClip()) presenceData.state = "Clip";
-			} else if (presence.getEpisodeNumber())
-				presenceData.state = `Episode ${presence.getEpisodeNumber()}`;
-			else presenceData.state = presence.getEpisodeTitle();
-		} else {
-			presenceData.details = "Viewing:";
-			presenceData.state = presence.getTitle();
-		}
-	} else if (document.location.pathname.endsWith("/search")) {
-		presenceData.details = "Searching for:";
-		presenceData.state = document.querySelector("input").value;
-	}
+      presenceData.state = episodeNumber
+        ? `Episode ${Number.parseInt(episodeNumber.textContent ?? '')}`
+        : episodeTitle
+          ? episodeTitle.textContent
+          : 'Unknown'
 
-	presence.setActivity(presenceData);
-});
+      if (parsedData && await presence.getSetting<boolean>('showCover'))
+        presenceData.largeImageKey = parsedData.coverInfo?.posterVt ?? '';
+
+      [presenceData.startTimestamp, presenceData.endTimestamp] = presence.getTimestampsfromMedia(video)
+
+      presenceData.smallImageKey = video.paused
+        ? ActivityAssets.Pause
+        : ActivityAssets.Play
+      presenceData.smallImageText = video.paused ? 'Paused' : 'Playing'
+
+      if (video.paused) {
+        delete presenceData.startTimestamp
+        delete presenceData.endTimestamp
+      }
+    }
+  }
+
+  presence.setActivity(presenceData)
+})
