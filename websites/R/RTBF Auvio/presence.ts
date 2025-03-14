@@ -25,7 +25,7 @@ let title = ''
 let subtitle = ''
 
 presence.on('UpdateData', async () => {
-  const { /* hostname, */ href, pathname } = document.location
+  const { href, pathname } = document.location
   const pathParts = pathname.split('/')
   const presenceData: PresenceData = {
     name: 'Auvio',
