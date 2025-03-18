@@ -129,8 +129,8 @@ export enum ActivityAssets { // Other default assets can be found at index.d.ts
   DeferredAnimated = 'https://imgur.com/cA3mQhL.gif',
   LiveAnimated = 'https://imgur.com/oBXFRPE.gif',
   // Localized
-  AdEn = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/4.png',
-  AdFr = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/5.png',
+  AdEn = 'https://imgur.com/xtg8CWj.png',
+  AdFr = 'https://imgur.com/gpIKYlf.png',
   // Channels
   LaUne = 'https://imgur.com/KKnPbmN.png',
   LaDeux = 'https://imgur.com/24c3O1i.png',
@@ -148,10 +148,10 @@ export enum ActivityAssets { // Other default assets can be found at index.d.ts
   MediasProx = 'https://imgur.com/N4QrJLq.png',
   AB3 = 'https://imgur.com/J78D4Xj.png',
   ABXPLORE = 'https://imgur.com/GgdoWRi.png',
-  LN24 = 'https://imgur.com/0XYGUbV.png',
   FunRadio = 'https://imgur.com/bERBU6l.png',
   NRJ = 'https://imgur.com/rlYpmuk.png',
   Arte = 'https://imgur.com/7hbWqRV.png',
+  LN24 = 'https://imgur.com/0XYGUbV.png',
   BRUZZ = 'https://imgur.com/5oEq4oI.png',
   BRF = 'https://imgur.com/NLxoehN.png',
   Kids = 'https://imgur.com/hZD8qiH.png',

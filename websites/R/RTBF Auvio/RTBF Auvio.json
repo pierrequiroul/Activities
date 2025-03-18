@@ -4,7 +4,7 @@
     "message": "a Podcast"
   },
   "RTBFAuvio.aRadio": {
-    "description": "Used with general string \"Listening\" to form \"Listening to a Radio\" in privacy mode.",
+    "description": "Used with general string \"Listening to\" to form \"Listening to a Radio\" in privacy mode.",
     "message": "a Radio"
   },
   "RTBFAuvio.buttonViewCategory": {

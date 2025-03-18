@@ -21,15 +21,16 @@ const slideshow = new Slideshow()
 let oldPath = document.location.pathname
 let isMediaPage = false
 let isMediaPlayer = false
+let audioPlayer = false
 let title = ''
 let subtitle = ''
 
 presence.on('UpdateData', async () => {
   const { href, pathname } = document.location
   const pathParts = pathname.split('/')
-  const presenceData: PresenceData = {
+  const presenceData: PresenceData = { // Default
     name: 'Auvio',
-    largeImageKey: ActivityAssets.Auvio, // Default
+    largeImageKey: ActivityAssets.Auvio,
     largeImageText: 'RTBF Auvio',
     smallImageKey: ActivityAssets.Binoculars,
     smallImageText: strings.browsing,
@@ -58,31 +59,37 @@ presence.on('UpdateData', async () => {
   if (oldPath !== pathname) {
     oldPath = pathname
     slideshow.deleteAllSlides()
+    audioPlayer = false
   }
 
   let useSlideshow = false
 
   switch (true) {
     case exist('#audioPlayerContainer') && document.querySelector('#PlayerUIAudioPlayPauseButton')?.getAttribute('aria-label') === 'pause': {
+      if (!audioPlayer) {
+        slideshow.deleteAllSlides() // Clearing previous slides
+        audioPlayer = true
+      }
       /* NOTE: PODCAST PLAYER
       NOTE: When a podcast is played, it appears in an audio player at the bottom of the screen.
       Once a podcast has been launched, it is visible at all times throughout the site until the website is refreshed. */
 
-      const firstLine = document.querySelector('.PlayerUIAudio_titleText__HV4Y2')?.textContent ?? ''
-      const secondLine = document.querySelector('.PlayerUIAudio_subtitle__uhGA4')?.textContent ?? ''
-      const duration = document.querySelector('.PlayerUIAudio_duration__n7hxV')?.textContent ?? '0'
+      const firstLine = document.querySelector('[class*=PlayerUIAudio_titleText]')?.textContent ?? ''
+      const secondLine = document.querySelector('[class*=PlayerUIAudio_subtitle]')?.textContent ?? ''
+      const duration = document.querySelector('[class*=PlayerUIAudio_duration]')?.textContent ?? '0'
 
       if (duration === 'DIRECT' || exist('#PlayerUIAudioGoToLiveButton')) {
         /* ANCHOR: RADIO LIVE FEED
+          EXAMPLE: https://auvio.rtbf.be/chaine/classic-21-5
           NOTE: Direct radios are in the same place as podcasts, and play in the same audio player.
           The only difference is in the duration field, which is equal to “direct”, or the back to direct button if in deferred mode. */
 
         const channelName = (firstLine.includes(' - ') ? firstLine.split(' - ')[0] : firstLine.match(/^\w+/)?.[0])!
         const coverArt = decodeURIComponent(
-          document.querySelector('.PlayerUIAudio_logoContainer__6ffGY > span > img')?.getAttribute('src')?.replace('/_next/image?url=', '').split('&w')[0] ?? '',
+          document.querySelector('[class*=PlayerUIAudio_logoContainer]  > span > img')?.getAttribute('src')?.replace('/_next/image?url=', '').split('&w')[0] ?? '',
         )
 
-        presenceData.name = usePrivacyMode || !usePresenceName ? strings.aRadio : getChannel(channelName).channel
+        presenceData.name = usePrivacyMode || !usePresenceName ? strings.toARadio : getChannel(channelName).channel
         presenceData.type = ActivityType.Listening
 
         presenceData.smallImageKey = usePrivacyMode
@@ -148,10 +155,10 @@ presence.on('UpdateData', async () => {
       }
       else {
         /* ANCHOR:  VOD PODCAST
-
+          EXAMPLE: https://auvio.rtbf.be/media/la-semaine-des-5-heures-la-semaine-des-5-heures-3318620
           Podcasts can be original programs or past broadcasts. */
 
-        presenceData.name = usePresenceName && !usePrivacyMode ? firstLine : strings.aPodcast
+        presenceData.name = usePresenceName && !usePrivacyMode ? firstLine : strings.toAPodcast
         presenceData.type = ActivityType.Listening
 
         presenceData.details = !usePrivacyMode
@@ -176,7 +183,7 @@ presence.on('UpdateData', async () => {
           presenceData.largeImageKey = await getThumbnail(
             decodeURIComponent(
               // the url is a weird relative encoded link
-              document.querySelector('.PlayerUIAudio_logoContainer__6ffGY > span > img')!.getAttribute('src')!.replace('/_next/image?url=', '').split('&w')[0]!,
+              document.querySelector('[class*=PlayerUIAudio_logoContainer]  > span > img')!.getAttribute('src')!.replace('/_next/image?url=', '').split('&w')[0]!,
             ),
             cropPreset.squared,
             getChannel('default').color,
@@ -187,13 +194,12 @@ presence.on('UpdateData', async () => {
       }
       break
     }
-    /* NOTE: RESEARCH (Page de recherche)
-
-    (https://auvio.rtbf.be/explorer) */
+    /* NOTE: RESEARCH PAGE
+    EXAMPLE: https://auvio.rtbf.be/explorer */
     case ['explorer'].includes(pathParts[1]!): {
       const searchQuery = (
         document.querySelector(
-          'input.PageContent_inputSearch__8B4AC',
+          'input[class*=PageContent_inputSearch]',
         ) as HTMLInputElement
       ).value
 
@@ -212,8 +218,7 @@ presence.on('UpdateData', async () => {
     }
 
     /* NOTE: ACCOUNT & ACCOUNT SETTINGS PAGE
-
-    (ex: https://auvio.rtbf.be/mes_informations) */
+    EXAMPLE: https://auvio.rtbf.be/mes_informations) */
     case [
       'mes_informations',
       'controle_parental',
@@ -222,21 +227,25 @@ presence.on('UpdateData', async () => {
       'langues_sous_titres',
       'parametres_lecture',
     ].includes(pathParts[1]!): {
-      presenceData.details = usePrivacyMode ? strings.browsing : document.querySelector('.UserGateway_title__PkVAb')!.textContent
+      presenceData.details = usePrivacyMode ? strings.browsing : document.querySelector('h1[class*=UserGateway_title]')!.textContent
       presenceData.state = usePrivacyMode ? strings.viewAPage : strings.viewAccount
 
-      presenceData.smallImageKey = usePrivacyMode || document.querySelector('.HeaderUser_text__tpHR7')!.textContent!.toLowerCase().includes('se connecter')
+      const name = document.querySelector('[class*=HeaderUser_text]')?.textContent ?? ''
+      presenceData.smallImageKey = usePrivacyMode || name!.toLowerCase().includes('se connecter')
         ? ActivityAssets.Binoculars
-        : document.querySelector('.HeaderUser_avatar__pbBy2 > span > img')!.getAttribute('src')
+        : document.querySelector('[class*=HeaderUser_avatar] > span > img')!.getAttribute('src')
       presenceData.smallImageText = usePrivacyMode
         ? strings.browsing
-        : document.querySelector('.HeaderUser_text__tpHR7')!.textContent
+        : name
 
       presenceData.largeImageKey = ActivityAssets.Logo
       break
     }
     case ['media', 'live', 'emission'].includes(pathParts[1]!): {
-      // NOTE: MEDIA PAGE
+      /* NOTE: MEDIA PAGE
+      EXAMPLES: https://auvio.rtbf.be/live/on-nest-pas-des-pigeons-601928
+                https://auvio.rtbf.be/media/everything-everywhere-all-at-once-film-aux-7-oscars-en-2023-3284136 */
+
       if (usePrivacyMode) {
         presenceData.smallImageKey = ActivityAssets.Privacy
         presenceData.smallImageText = strings.privacy
@@ -273,7 +282,7 @@ presence.on('UpdateData', async () => {
 
         let mediaType, description, image, channel, duration, category, scheduledFrom, scheduledTo, waitTime, remainingTime
         if (response) {
-          // Populating metadatas variables
+          // Populating metadatas variables with API method
 
           mediaType = metadatas.data.pageType
             ?? metadatas.data.content?.pageType
@@ -325,6 +334,7 @@ presence.on('UpdateData', async () => {
           }
         }
         else {
+          // Populating metadatas variables with Fallback method
           let mediaData: any
 
           for (
@@ -343,13 +353,13 @@ presence.on('UpdateData', async () => {
 
           mediaType = pathParts[1]
 
-          subtitle = document.querySelector('.DetailsTitle_subtitle__D30rn')?.textContent || ''
-          title = document.querySelector('div.DetailsTitle_title__mdRHD > h1')?.textContent?.replace(subtitle, '') ?? 'Auvio'
+          subtitle = document.querySelector('[class*=DetailsTitle_subtitle]')?.textContent || ''
+          title = document.querySelector('div[class*=DetailsTitle_title] > h1')?.textContent?.replace(subtitle, '') ?? 'Auvio'
           description = mediaData?.description && mediaData.description.length > 2 ? limitText(mediaData.description, 128) : 'Auvio'
           image = mediaData?.thumbnailUrl || ActivityAssets.Logo
-          channel = document.querySelectorAll('div.DetailsTitle_channelCategory__vh_cY > div')[0]?.textContent ?? ''
+          channel = document.querySelectorAll('div[class*=DetailsTitle_channelCategory] > div')[0]?.textContent ?? ''
           duration = formatDuration(mediaData?.duration ?? 0)
-          category = document.querySelector('.Breadcrumb_breadcrumb__fdU_2 > ul > li:last-child > span')?.textContent || ''
+          category = document.querySelector('[class*=Breadcrumb_breadcrumb] > ul > li:last-child > span')?.textContent || ''
 
           scheduledFrom = ''
           scheduledTo = ''
@@ -413,12 +423,12 @@ presence.on('UpdateData', async () => {
           if (mediaType === 'LIVE') {
             const scheduleData = structuredClone(presenceData)
             if ((waitTime || -1) > 0) {
-              scheduleData.state = 'Starts in {0}'.replace('{0}', formatDuration(waitTime!)) // "Starts in 3h41"
+              scheduleData.state = strings.startsIn.replace('{0}', formatDuration(waitTime!)) // "Starts in 3h41"
               scheduleData.smallImageKey = ActivityAssets.Waiting
               scheduleData.smallImageText = strings.waitingLive
             }
             else if ((remainingTime || -1) > 0) {
-              scheduleData.state = 'Ends in {0}'.replace('{0}', formatDuration(remainingTime!)) // "Ends in 3h41"
+              scheduleData.state = strings.endsIn.replace('{0}', formatDuration(remainingTime!)) // "Ends in 3h41"
               scheduleData.smallImageKey = ActivityAssets.Deferred
               scheduleData.smallImageText = strings.browsing
             }
@@ -437,8 +447,8 @@ presence.on('UpdateData', async () => {
           }
 
           // Update the variables only if the overlay is visible and the elements are found
-          title = document.querySelector('.TitleDetails_title__vsoUq')?.textContent ?? title
-          subtitle = document.querySelector('.TitleDetails_subtitle__y1v4e')?.textContent ?? subtitle
+          title = document.querySelector('h1[class*=TitleDetails_title]')?.textContent ?? title
+          subtitle = document.querySelector('[class*=TitleDetails_subtitle]')?.textContent ?? subtitle
 
           const videoArray = document.querySelectorAll('div.redbee-player-media-container > video')
           const video = videoArray[videoArray.length - 1] as HTMLVideoElement
@@ -569,9 +579,9 @@ presence.on('UpdateData', async () => {
       }
       break
     }
-    /* NOTE: HOME PAGE, CATEGORY & CHANNEL PAGE
-
-    (ex: https://auvio.rtbf.be/categorie/sport-9 or https://auvio.rtbf.be/chaine/la-une-1) */
+    /* NOTE: HOME PAGE, CATEGORY & CHANNEL PAGES
+    EXAMPLES: https://auvio.rtbf.be/categorie/sport-9
+              https://auvio.rtbf.be/chaine/la-une-1 */
 
     case pathname === '/' // Homepage
       || [
@@ -584,6 +594,7 @@ presence.on('UpdateData', async () => {
         'mot-cle',
         'premium',
         'widget',
+        'notreselection',
       ].includes(pathParts[1]!): {
       presenceData.details = strings.browsing
 
@@ -619,7 +630,7 @@ presence.on('UpdateData', async () => {
         if (useButtons) {
           presenceData.buttons = [
             {
-              label: strings.buttonViewPage,
+              label: strings.buttonViewCategory,
               url: href,
             },
           ]
@@ -629,14 +640,15 @@ presence.on('UpdateData', async () => {
           && !['podcasts'].includes(pathParts[1]!) // TO-DO: Podcast category can cause issues
         ) {
           useSlideshow = true
-          const selector = exist('img.TileProgramPoster_hoverPicture__v5RJX')
-            ? 'img.TileProgramPoster_hoverPicture__v5RJX' // If programs cover art are in portrait
-            : exist('img.TileMedia_hoverPicture__RGh_m')
-              ? 'img.TileMedia_hoverPicture__RGh_m' // If programs cover art are in landscape
-              : '.TileMedia_mosaic__hxuYt > span > img'
+
+          const selector = exist('img[class*=TileProgramPoster_hoverPicture]')
+            ? 'img[class*=TileProgramPoster_hoverPicture]' // If programs cover art are in portrait
+            : exist('img[class*=TileMedia_hoverPicture]')
+              ? 'img[class*=TileMedia_hoverPicture]' // If programs cover art are in landscape
+              : '[class*=TileMedia_mosaic] > span > img' // If the page is mot-cle
 
           // SLIDES: Samples of content in the category
-          const galleryElement = document.querySelector('.swiper-wrapper:has(:not(figure) img)') || document.querySelector('.Mosaic_mosaic__0Js0V')
+          const galleryElement = document.querySelector('.swiper-wrapper:has(:not(figure) img)') || document.querySelector('[class*=Mosaic_mosaic]')
           for (
             let index = 0;
             index < galleryElement!.childElementCount;
@@ -653,7 +665,7 @@ presence.on('UpdateData', async () => {
 
               sampleData.largeImageKey = await getThumbnail(
                 src,
-                exist('img.TileProgramPoster_hoverPicture__v5RJX')
+                exist('img[class*=TileProgramPoster_hoverPicture]')
                   ? cropPreset.vertical
                   : cropPreset.horizontal,
                 getColor(categoryTitle),
@@ -679,7 +691,8 @@ presence.on('UpdateData', async () => {
 
     // In case we need a default
     default: {
-      presenceData.details = strings.viewAPage
+      presenceData.details = strings.browsing
+      presenceData.state = strings.viewAPage
       break
     }
   }
