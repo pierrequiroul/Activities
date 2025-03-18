@@ -42,7 +42,7 @@ export const stringMap = {
 
 // eslint-disable-next-line import/no-mutable-exports
 export let strings: Awaited<
-  ReturnType<typeof presence.getStrings<typeof stringMap>>
+  typeof stringMap
 >
 
 let oldLang: string | null = null
