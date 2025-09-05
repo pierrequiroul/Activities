@@ -136,7 +136,7 @@ export enum ActivityAssets {
   RTLSports = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/16.png',
   BelRTL = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/10.png',
   Contact = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/11.png',
-  Mint = "https://i.imgur.com/IzFAcAN.png",
+  Mint = 'https://i.imgur.com/IzFAcAN.png',
 }
 
 export const localizedAssets = {

@@ -379,18 +379,19 @@ presence.on('UpdateData', async () => {
             try {
               // Fetch the data from the API
               let data
-              
-              if(!pathParts[2]) {
+
+              if (!pathParts[2]) {
                 // Main radio use radioplayer api
-                const response = await fetch(getChannel(hostname).radioplayerAPI!) 
+                const response = await fetch(getChannel(hostname).radioplayerAPI!)
                 const dataString = await response.text()
                 data = JSON.parse(dataString).results.now
-              } else {
+              }
+              else {
                 // Secondary webradio use in house api
-                const response = await fetch(getChannel(pathParts[2]).radioplayerAPI!) 
+                const response = await fetch(getChannel(pathParts[2]).radioplayerAPI!)
                 const dataString = await response.text()
                 const playlistData = JSON.parse(dataString)
-                
+
                 // Find the currently playing song by comparing timestamps
                 const now = Date.now() / 1000 // Current time in seconds
                 const currentSong = playlistData.find((song: any) => {
@@ -398,15 +399,14 @@ presence.on('UpdateData', async () => {
                   const endTime = new Date(song.EndTime).getTime() / 1000
                   return startTime <= now && now <= endTime
                 }) || playlistData[0] // Fallback to first song if none found
-                
-                console.log(currentSong)
+
                 data = {
                   name: currentSong.Title,
                   artistName: currentSong.Artist,
-                  imageUrl: currentSong.Cover["200"],
+                  imageUrl: currentSong.Cover['200'],
                   startTime: new Date(currentSong.StartTime).getTime() / 1000,
                   stopTime: new Date(currentSong.EndTime).getTime() / 1000,
-                  }
+                }
               }
 
               presenceData.details = data.name || strings.listeningMusic
@@ -424,13 +424,13 @@ presence.on('UpdateData', async () => {
                 data.imageUrl,
               )
 
-              presenceData.largeImageText = data.serviceDescription 
-              ? limitText(
-                `${getChannel(webradio).channel} - ${
-                  data.serviceDescription
-                }`,
-              )
-              : getChannel(webradio).channel
+              presenceData.largeImageText = data.serviceDescription
+                ? limitText(
+                    `${getChannel(webradio).channel} - ${
+                      data.serviceDescription
+                    }`,
+                  )
+                : getChannel(webradio).channel
             }
             catch (error) {
               presence.error(`Error fetching data from the API: ${error}`)
