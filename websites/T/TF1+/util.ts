@@ -16,6 +16,7 @@ export const stringMap = {
   viewPage: 'general.viewPage',
   viewAccount: 'general.viewAccount',
   viewCategory: 'general.viewCategory',
+  viewACategory: 'TF1+.ViewACategory',
   viewHome: 'general.viewHome',
   buttonViewPage: 'general.buttonViewPage',
   buttonWatchVideo: 'general.buttonWatchVideo',
@@ -32,7 +33,7 @@ export const stringMap = {
 
 // eslint-disable-next-line import/no-mutable-exports
 export let strings: Awaited<
-  ReturnType<typeof presence.getStrings<typeof stringMap>>
+  typeof stringMap
 >
 
 let oldLang: string | null = null
@@ -207,14 +208,14 @@ export function getColor(string: string) {
     /* Plain color in hexadecimal ex: #ffaa00
     Gradient colors in RGB ex: [R, G, B, GradientOffset] */
     // Default colors
-    ['', '#ffcc00'],
-    ['default', '#ffcc00'],
+    ['', '#0308fa'],
+    ['default', '#0308fa'],
     [
       'gradient',
       [
         [7, 0, 130, 0],
         [1, 1, 245, 1],
-      ]
+      ],
     ],
     // Category colors
     [
@@ -269,105 +270,120 @@ export const cropPreset = {
 }
 
 export async function generateImageWithBackground(
-    src: string = ActivityAssets.Logo,
-    backgroundColor: string | number[][],
-    dezoom: number = 1,
-    offsetX: number = 0,
-    offsetY: number = 0
+  src: string = ActivityAssets.Logo,
+  backgroundColor: string | number[][] = getColor('')!,
+  dezoom: number = 0.95,
+  offsetX: number = 0,
+  offsetY: number = 0,
 ): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = src;
-        img.crossOrigin = "anonymous"; 
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.src = src
+    img.crossOrigin = 'anonymous'
 
-        img.onload = function () {
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
+    img.onload = function () {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
 
-            if (!ctx) {
-                reject(new Error("Impossible d'obtenir le contexte du canvas"));
-                return;
-            }
+      if (!ctx) {
+        reject(new Error('Impossible d\'obtenir le contexte du canvas'))
+        return
+      }
 
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
+      canvas.width = img.width
+      canvas.height = img.height
+      ctx.drawImage(img, 0, 0)
 
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const pixels = imageData.data;
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const pixels = imageData.data
 
-            let top = canvas.height, bottom = 0, left = canvas.width, right = 0;
-            let found = false;
+      let top = canvas.height
+      let bottom = 0
+      let left = canvas.width
+      let right = 0
+      let found = false
 
-            for (let y = 0; y < canvas.height; y++) {
-                for (let x = 0; x < canvas.width; x++) {
-                    let index = (y * canvas.width + x) * 4;
-                    let alpha = pixels[index + 3]!;
+      for (let y = 0; y < canvas.height; y++) {
+        for (let x = 0; x < canvas.width; x++) {
+          const index = (y * canvas.width + x) * 4
+          const alpha = pixels[index + 3]!
 
-                    if (alpha > 0) {
-                        found = true;
-                        if (y < top) top = y;
-                        if (y > bottom) bottom = y;
-                        if (x < left) left = x;
-                        if (x > right) right = x;
-                    }
-                }
-            }
+          if (alpha > 0) {
+            found = true
+            if (y < top)
+              top = y
+            if (y > bottom)
+              bottom = y
+            if (x < left)
+              left = x
+            if (x > right)
+              right = x
+          }
+        }
+      }
 
-            if (!found) {
-                reject(new Error("L'image est totalement transparente !"));
-                return;
-            }
+      if (!found) {
+        reject(new Error('L\'image est totalement transparente !'))
+        return
+      }
 
-            // Dimensions de la zone visible
-            const imgWidth = right - left + 1;
-            const imgHeight = bottom - top + 1;
+      // Dimensions de la zone visible
+      const imgWidth = right - left + 1
+      const imgHeight = bottom - top + 1
 
-            // Création du canvas final (fond + image centrée)
-            const finalSize = Math.max(imgWidth, imgHeight) * 2;
-            const outputCanvas = document.createElement("canvas");
-            const outputCtx = outputCanvas.getContext("2d");
+      // Création du canvas final (fond + image centrée)
+      const finalSize = Math.max(imgWidth, imgHeight) * 2
+      const outputCanvas = document.createElement('canvas')
+      const outputCtx = outputCanvas.getContext('2d')
 
-            if (!outputCtx) {
-                reject(new Error("Impossible d'obtenir le contexte du canvas de sortie"));
-                return;
-            }
+      if (!outputCtx) {
+        reject(new Error('Impossible d\'obtenir le contexte du canvas de sortie'))
+        return
+      }
 
-            outputCanvas.width = finalSize;
-            outputCanvas.height = finalSize;
+      outputCanvas.width = finalSize
+      outputCanvas.height = finalSize
 
-            // Appliquer le fond
-            if (Array.isArray(backgroundColor)) {
-                const gradient = outputCtx.createLinearGradient(0, canvas.width, 0, 0);
-                backgroundColor.forEach(([r, g, b, offset]) => {
-                    gradient.addColorStop(offset!, `rgb(${r}, ${g}, ${b})`);
-                });
-                outputCtx.fillStyle = gradient;
-            } else {
-                outputCtx.fillStyle = backgroundColor;
-            }
-            outputCtx.fillRect(0, 0, finalSize, finalSize);
+      // Appliquer le fond
+      if (Array.isArray(backgroundColor)) {
+        const gradient = outputCtx.createLinearGradient(0, canvas.width, 0, 0)
+        backgroundColor.forEach(([r, g, b, offset]) => {
+          gradient.addColorStop(offset!, `rgb(${r}, ${g}, ${b})`)
+        })
+        outputCtx.fillStyle = gradient
+      }
+      else {
+        outputCtx.fillStyle = backgroundColor
+      }
+      outputCtx.fillRect(0, 0, finalSize, finalSize)
 
-            // Nouvelle taille de l'image après dézoom
-            const scaledWidth = imgWidth / dezoom;
-            const scaledHeight = imgHeight / dezoom;
+      // Nouvelle taille de l'image après dézoom
+      const scaledWidth = imgWidth / dezoom
+      const scaledHeight = imgHeight / dezoom
 
-            // Positionner le PNG au centre avec translation
-            const destX = (finalSize - scaledWidth) / 2 + offsetX;
-            const destY = (finalSize - scaledHeight) / 2 + offsetY;
+      // Positionner le PNG au centre avec translation
+      const destX = (finalSize - scaledWidth) / 2 + offsetX
+      const destY = (finalSize - scaledHeight) / 2 + offsetY
 
-            // Dessiner le PNG recadré sur le fond
-            outputCtx.drawImage(
-                canvas, left, top, imgWidth, imgHeight, // Source
-                destX, destY, scaledWidth, scaledHeight // Destination
-            );
+      // Dessiner le PNG recadré sur le fond
+      outputCtx.drawImage(
+        canvas,
+        left,
+        top,
+        imgWidth,
+        imgHeight, // Source
+        destX,
+        destY,
+        scaledWidth,
+        scaledHeight, // Destination
+      )
 
-            // Retourne l’image finale en Base64
-            resolve(outputCanvas.toDataURL("image/png"));
-        };
+      // Retourne l’image finale en Base64
+      resolve(outputCanvas.toDataURL('image/png'))
+    }
 
-        img.onerror = (err) => reject(err);
-    });
+    img.onerror = err => reject(err)
+  })
 }
 
 export async function getThumbnail(

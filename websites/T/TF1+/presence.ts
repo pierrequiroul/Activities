@@ -3,17 +3,17 @@ import {
   ActivityAssets,
   checkStringLanguage,
   cropPreset,
-  //exist,
-  //formatDuration,
-  //getChannel,
+  generateImageWithBackground,
+  // exist,
+  // formatDuration,
+  // getChannel,
   getColor,
-  //getLocalizedAssets,
+  // getLocalizedAssets,
   getSetting,
   getThumbnail,
   limitText,
   presence,
   strings,
-  generateImageWithBackground
 } from './util.js'
 
 const browsingTimestamp = Math.floor(Date.now() / 1000)
@@ -22,7 +22,8 @@ const slideshow = new Slideshow()
 let oldPath = document.location.pathname
 
 presence.on('UpdateData', async () => {
-  const { href, pathname } = document.location
+  const baseUrl = document.querySelector('link[hreflang=fr-fr]')!.getAttribute('href')!
+  const { href, pathname } = new URL(baseUrl)
   const pathParts = pathname.split('/')
   const presenceData: PresenceData = {
     name: 'TF1+',
@@ -34,18 +35,18 @@ presence.on('UpdateData', async () => {
   }
   const [
     newLang,
-    //usePresenceName,
-    //useChannelName,
-    //usePrivacyMode,
-    //usePoster,
-    //useButtons,
+    // usePresenceName,
+    // useChannelName,
+    // usePrivacyMode,
+    // usePoster,
+    // useButtons,
   ] = [
     getSetting<string>('lang', 'en'),
-    //getSetting<boolean>('usePresenceName'),
-    //getSetting<boolean>('useChannelName'),
-    //getSetting<boolean>('usePrivacyMode'),
-    //getSetting<boolean>('usePoster'),
-    //getSetting<number>('useButtons'),
+    // getSetting<boolean>('usePresenceName'),
+    // getSetting<boolean>('useChannelName'),
+    // getSetting<boolean>('usePrivacyMode'),
+    // getSetting<boolean>('usePoster'),
+    // getSetting<number>('useButtons'),
   ]
 
   // Update strings if user selected another language.
@@ -54,76 +55,68 @@ presence.on('UpdateData', async () => {
 
   if (oldPath !== pathname) {
     oldPath = pathname
-    //slideshow.deleteAllSlides()
+    // slideshow.deleteAllSlides()
   }
-  
+
   let useSlideshow = false
-  const routeKey = document.querySelector('meta[name="custom:route_key"]')!.getAttribute("content")!
+  const routeKey = document.querySelector('meta[name="custom:route_key"]')!.getAttribute('content')!
 
   switch (true) {
-    case routeKey === "HOME": {
-        presenceData.details = strings.browsing
-        presenceData.state = strings.viewHome
-        break
+    /* HOMEPAGE
+    https://www.tf1.fr/ (France)
+    https://www.tf1.fr/fr-be/ (Belgium)
+    https://www.tf1.fr/fr-ch/ (Switzerland)
+    */
+    case routeKey === 'HOME': {
+      presenceData.details = strings.browsing
+      presenceData.state = strings.viewHome
+      break
     }
-    case ["PROFILE", "ACCOUNT"].includes(routeKey): {
-        presenceData.details = strings.browsing
-        presenceData.state = strings.viewAccount
-        break
+    /* ACCOUNT & PROFILE SWITCHING
+    https://www.tf1.fr/fr-be/mon-compte (Account settings)
+    https://www.tf1.fr/fr-be/profils (Switch profiles)
+    */
+    case ['PROFILE', 'ACCOUNT'].includes(routeKey): {
+      presenceData.details = strings.browsing
+      presenceData.state = strings.viewAccount
+      break
     }
-    case routeKey === "CATEGORY_REPLAY_CATALOG": {
-        presenceData.details = strings.browsing
-        presenceData.state = strings.viewCategory
-        break
+    case ['CATEGORY'].includes(routeKey): {
+      const category = document.querySelector('meta[name=keywords]')?.getAttribute('content')?.split(', ')[0]
+      presenceData.details = category || strings.browsing
+      presenceData.state = category ? strings.viewCategory.replace(':', '') : strings.viewACategory
+      break
     }
-    case routeKey === "PROGRAM_HOME": {
-        let mediaData
-        for (
-            let i = 0;
-            i
-            < document.querySelectorAll('script[type=\'application/ld+json\']')
-              .length;
-            i++
-          ) {
-            const data = JSON.parse(
-              document.querySelectorAll('script[type=\'application/ld+json\']')[i]?.textContent ?? '{}',
-            )
-            if (['TVSeries', 'Movie'].includes(data['@type']))
-              mediaData = data
-          }
+    case routeKey === 'PROGRAM': {
+      // Exemple de récupération des données API (à adapter selon l'intégration réelle)
+      const mediaId = pathParts[2]
+      const apiResponse = await fetch(`https://www.tf1.fr/graphql/fr-be/web?id=a38bd8c4326fc54edab69c78de0223b1380aaebc&variables=%7B%22programSlug%22%3A%22${mediaId}%22%2C%22isOrderActionEnabled%22%3Atrue%7D`)
+        .then(r => r.json())
+        .catch(() => null)
+      const item = apiResponse?.data?.callToActionByProgramSlug?.items?.[0]
+      const name = item?.video?.program?.name || strings.browsing
+      const subLabel = item?.video?.program?.decoration?.subLabel || ''
+      const typology = item?.video?.program?.typology || ''
+      const programImage = document.querySelector('img[data-testid=program-page-cover-logo]')!.getAttribute('src')!
+      presenceData.details = name
+      presenceData.state = [subLabel, typology].filter(Boolean).join(' • ')
 
-        const title = document.querySelector("h1.inline")?.textContent
-        const subtitle = document.querySelector("p.inline")?.textContent
-        const logo = await generateImageWithBackground(
-            document.querySelector("div.grid > div > picture > img")?.getAttribute("src")!,
-            "white",
-            0.55,
-            0,
-            0
-        )
-
-        presenceData.details = title
-        presenceData.state = subtitle
-        
-        /*presenceData.largeImageKey = await getThumbnail(
+      /* presenceData.largeImageKey = await getThumbnail(
             logo,
             cropPreset.squared,
             getColor("gradient"),
-        )*/
-        presenceData.largeImageKey = logo
-        break
+        ) */
+      presenceData.largeImageKey = await generateImageWithBackground(programImage)
+      break
     }
-    case routeKey === "VIDEO": {
-        presenceData.details = strings.browsing
-        presenceData.state = strings.watchingShow
-        break
+    case routeKey === 'VIDEO': {
+      break
     }
-    case routeKey === "LIVE": {
-        presenceData.details = strings.browsing
-        presenceData.state = strings.watchingLive
-        break
+    case routeKey === 'LIVE': {
+      presenceData.details = strings.browsing
+      presenceData.state = strings.watchingLive
+      break
     }
-    
 
     // In case we need a default
     default: {
