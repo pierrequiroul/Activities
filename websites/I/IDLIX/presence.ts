@@ -1,7 +1,7 @@
 import { ActivityType, Assets, getTimestamps } from 'premid'
 
 const presence = new Presence({
-  clientId: '1052119362015866882',
+  clientId: '503557087041683458',
 })
 const browsingTimestamp = Math.floor(Date.now() / 1000)
 
@@ -24,11 +24,12 @@ enum ActivityAssets {
   Ad = 'https://cdn.rcd.gg/PreMiD/websites/I/IDLIX/assets/0.png',
   Logo = 'https://cdn.rcd.gg/PreMiD/websites/I/IDLIX/assets/logo.png',
 }
-let oldLang: string | null = null
 let current: number
 let duration: number
 let paused: boolean
 let isVideo: boolean
+let strings: Awaited<ReturnType<typeof getStrings>>
+let oldLang: string | null = null
 
 presence.on('iFrameData', (data: unknown) => {
   ({ current, duration, paused, isVideo } = data as {
@@ -103,6 +104,7 @@ presence.on('UpdateData', async () => {
     largeImageKey: ActivityAssets.Logo,
     startTimestamp: browsingTimestamp,
     type: ActivityType.Watching,
+    name: 'IDLIX',
   }
   const { pathname, href } = document.location
   const [newLang, privacy, buttons, covers] = await Promise.all([
