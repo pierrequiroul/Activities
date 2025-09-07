@@ -12,8 +12,10 @@
     "Club RTL",
     "Plug RTL",
     "RTL District",
+    "RTL sports",
     "Bel RTL",
-    "Radio Contact"
+    "Radio Contact",
+    "Mint"
   ],
   "description": {
     "de": "Mit RTLplay finden Sie alle Programme unserer Sender RTL TVI, Club RTL, Plug RTL, RTL District, RTL sports, Bel RTL und Radio Contact als Live- und Replay-Stream sowie exklusive Inhalte.",
@@ -24,7 +26,8 @@
   "url": [
     "www.rtlplay.be",
     "www.radiocontact.be",
-    "www.belrtl.be"
+    "www.belrtl.be",
+    "www.mint.be"
   ],
   "version": "2.2.0",
   "logo": "https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/logo.png",
@@ -43,6 +46,7 @@
     "sports",
     "contact",
     "belrtl",
+    "mint",
     "belgique",
     "belgien",
     "belgië",
