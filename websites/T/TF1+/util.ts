@@ -12,6 +12,7 @@ export const stringMap = {
   searchFor: 'general.searchFor',
   browsing: 'general.browsing',
   privacy: 'general.privacy',
+  viewing: 'general.viewing',
   viewAPage: 'general.viewAPage',
   viewPage: 'general.viewPage',
   viewAccount: 'general.viewAccount',
@@ -266,13 +267,13 @@ export const cropPreset = {
   // Crop values in percent correspond to Left, Right, Top, Bottom.
   squared: [0, 0, 0, 0],
   vertical: [0.22, 0.22, 0, 0.3],
-  horizontal: [0.40, 0, 0, 0],
+  horizontal: [0.41, 0, 0, 0],
 }
 
 export async function generateImageWithBackground(
   src: string = ActivityAssets.Logo,
   backgroundColor: string | number[][] = getColor('')!,
-  dezoom: number = 0.95,
+  dezoom: number = 1,
   offsetX: number = 0,
   offsetY: number = 0,
 ): Promise<string> {
@@ -389,7 +390,7 @@ export async function generateImageWithBackground(
 export async function getThumbnail(
   src: string = ActivityAssets.Logo,
   cropPercentages: typeof cropPreset.squared = cropPreset.squared, // Left, Right, top, Bottom
-  borderColor: string | number[][] = getColor('')!,
+  borderColor: string | number[][] = getColor('gradient')!,
   borderWidth = 15,
   progress = 2,
 ): Promise<string> {
@@ -398,30 +399,28 @@ export async function getThumbnail(
       const img = new Image()
       const wh = 320 // Size of the square thumbnail
 
-      img.crossOrigin = 'anonymous'
-      img.src = src
-
-      img.onload = async function () {
+      // Function: Process the image once loaded
+      const processImage = (loadedImg: HTMLImageElement) => {
         let croppedWidth
         let croppedHeight
         let cropX = 0
         let cropY = 0
 
         // Determine if the image is landscape or portrait
-        const isLandscape = img.width > img.height
+        const isLandscape = loadedImg.width > loadedImg.height
 
         if (isLandscape) {
         // Landscape mode: use left and right crop percentages
-          const cropLeft = img.width * cropPercentages[0]!
-          croppedWidth = img.width - cropLeft - img.width * cropPercentages[1]!
-          croppedHeight = img.height
+          const cropLeft = loadedImg.width * cropPercentages[0]!
+          croppedWidth = loadedImg.width - cropLeft - loadedImg.width * cropPercentages[1]!
+          croppedHeight = loadedImg.height
           cropX = cropLeft
         }
         else {
         // Portrait mode: use top and bottom crop percentages
-          const cropTop = img.height * cropPercentages[2]!
-          croppedWidth = img.width
-          croppedHeight = img.height - cropTop - img.height * cropPercentages[3]!
+          const cropTop = loadedImg.height * cropPercentages[2]!
+          croppedWidth = loadedImg.width
+          croppedHeight = loadedImg.height - cropTop - loadedImg.height * cropPercentages[3]!
           cropY = cropTop
         }
 
@@ -487,27 +486,42 @@ export async function getThumbnail(
         }
 
         // 3. Draw the cropped image centered and zoomed out based on the borderWidth
-        ctx.drawImage(
-          img,
-          cropX,
-          cropY,
-          croppedWidth,
-          croppedHeight,
-          offsetX,
-          offsetY,
-          newWidth,
-          newHeight,
-        )
-
-        resolve(tempCanvas.toDataURL('image/png'))
+        try {
+          ctx.drawImage(
+            loadedImg,
+            cropX,
+            cropY,
+            croppedWidth,
+            croppedHeight,
+            offsetX,
+            offsetY,
+            newWidth,
+            newHeight,
+          )
+          resolve(tempCanvas.toDataURL('image/png'))
+        }
+        catch (error) {
+          console.warn('Failed to draw image on canvas:', error)
+          resolve(ActivityAssets.Logo)
+        }
       }
 
-      img.onerror = function () {
-        resolve(ActivityAssets.Logo)
+      // Strategy 1: Try with CORS first (for ds.static.rtbf.be)
+      img.crossOrigin = 'anonymous'
+      img.onload = () => processImage(img)
+
+      img.onerror = () => {
+        console.warn('CORS failed, using original URL fallback')
+
+        // Strategy 2: Direct fallback to original url (for static-content.rtbf.be)
+        resolve(src)
       }
+
+      img.src = src
     })
   }
   else {
-    return ActivityAssets.Logo
+    return src
   }
 }
+

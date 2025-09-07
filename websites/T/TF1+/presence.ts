@@ -55,7 +55,7 @@ presence.on('UpdateData', async () => {
 
   if (oldPath !== pathname) {
     oldPath = pathname
-    // slideshow.deleteAllSlides()
+    slideshow.deleteAllSlides()
   }
 
   let useSlideshow = false
@@ -87,26 +87,56 @@ presence.on('UpdateData', async () => {
       presenceData.state = category ? strings.viewCategory.replace(':', '') : strings.viewACategory
       break
     }
-    case routeKey === 'PROGRAM': {
-      // Exemple de récupération des données API (à adapter selon l'intégration réelle)
-      const mediaId = pathParts[2]
-      const apiResponse = await fetch(`https://www.tf1.fr/graphql/fr-be/web?id=a38bd8c4326fc54edab69c78de0223b1380aaebc&variables=%7B%22programSlug%22%3A%22${mediaId}%22%2C%22isOrderActionEnabled%22%3Atrue%7D`)
-        .then(r => r.json())
-        .catch(() => null)
-      const item = apiResponse?.data?.callToActionByProgramSlug?.items?.[0]
-      const name = item?.video?.program?.name || strings.browsing
-      const subLabel = item?.video?.program?.decoration?.subLabel || ''
-      const typology = item?.video?.program?.typology || ''
-      const programImage = document.querySelector('img[data-testid=program-page-cover-logo]')!.getAttribute('src')!
-      presenceData.details = name
-      presenceData.state = [subLabel, typology].filter(Boolean).join(' • ')
+    case ['PROGRAM'].includes(routeKey): {
+      useSlideshow = true
+      const title = document.querySelector('span[aria-current=page]')?.textContent
+      let tags: string[] = []
+      for (const tag of document.querySelectorAll('div[data-testid=program-cover] li')) {
+        if (tag.textContent) tags.push(tag.textContent)
+      }
+      const description = document.querySelector('p.default-2')?.textContent
+      const posterElement = document.querySelector("div[data-testid=program-cover] div.bg-tertiary img")
+      const poster = posterElement ? await getThumbnail(posterElement!.getAttribute('src') || '') : ActivityAssets.TF1
 
-      /* presenceData.largeImageKey = await getThumbnail(
-            logo,
-            cropPreset.squared,
-            getColor("gradient"),
-        ) */
-      presenceData.largeImageKey = await generateImageWithBackground(programImage)
+      presenceData.details = title
+      presenceData.state = `${tags[0]} - ${tags[1]}`
+
+      presenceData.largeImageKey = poster
+      presenceData.largeImageText = description
+
+      const presenceDataSlide1 = structuredClone(presenceData) // Deep copy
+      presenceDataSlide1.state = `${tags[2]} - ${tags[3]}`
+
+      slideshow.addSlide('poster-image', presenceData, 5000)
+      slideshow.addSlide('background-image', presenceDataSlide1, 5000)
+      break
+    }
+    case ['PROGRAM_VIDEOS'].includes(routeKey): {
+      useSlideshow = true
+      const title = document.querySelector('main a span.px-1')?.textContent
+      let tags: string[] = []
+      for (const tag of document.querySelectorAll('nav[aria-label="Vous êtes ici"] ol li')) {
+        if (tag.textContent) tags.push(tag.textContent)
+      }
+      if (tags.length >= 3) {
+        tags.splice(0, 3)
+      } else {
+        tags.splice(0, 2)
+      }
+
+      presenceData.details = title
+      presenceData.state = `${strings.viewing} ${tags.join('・')}`
+
+      for (let count = 0; count < 20; count++) {
+        const description = document.querySelectorAll('ul article div.gap-y-1 span')[count]?.textContent;
+        const poster = document.querySelectorAll('ul article div.bg-tertiary img')[count]?.getAttribute('src');
+
+        const slide = structuredClone(presenceData);
+        slide.largeImageKey = poster ? await getThumbnail(poster, cropPreset.horizontal) : ActivityAssets.TF1;
+        slide.largeImageText = description || 'TF1+';
+        slideshow.addSlide(count.toString(), slide, 5000);
+      }
+      console.log(slideshow)
       break
     }
     case routeKey === 'VIDEO': {
