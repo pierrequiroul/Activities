@@ -11,6 +11,7 @@ import {
   checkStringLanguage,
   cropPreset,
   exist,
+  fetchCache,
   getChannel,
   getLocalizedAssets,
   getSetting,
@@ -67,10 +68,19 @@ presence.on('UpdateData', async () => {
   switch (true) {
     /* MAIN PAGE (Page principale)
 
-    (https://www.rtlplay.be/) */
-    case pathname === '/'
-      || (pathParts[1] === 'rtlplay' && pathParts.length <= 2): {
+    https://www.rtlplay.be/rtlplay
+    https://www.radiocontact.be/
+    https://www.belrtl.be/index-bel-rtl.htm
+    https://mint.be/ (is not added because it's also the media player page)
+    */
+    case (pathname === '/'
+      || (['rtlplay', 'index-bel-rtl.htm'].includes(pathParts[1]!) && !pathParts[2]))
+    && hostname !== 'mint.be': {
+      console.warn(hostname)
       presenceData.details = strings.browsing
+      presenceData.name = getChannel(hostname).name
+      presenceData.largeImageKey = getChannel(hostname).animated
+      presenceData.largeImageText = getChannel(hostname).name
 
       if (usePrivacyMode) {
         presenceData.state = strings.viewAPage
@@ -202,10 +212,16 @@ presence.on('UpdateData', async () => {
 
     /* DIRECT PAGE (Page des chaines en direct)
 
-    (https://www.rtlplay.be/rtlplay/direct/tvi) */
+    https://www.rtlplay.be/rtlplay/direct/tvi
+    https://www.radiocontact.be/live/
+    https://www.radiocontact.be/player/
+    https://www.belrtl.be/player/webradio7
+    https://mint.be/ (exceptionnaly is also the main page)
+    */
     case (hostname === 'www.rtlplay.be' && ['direct'].includes(pathParts[2]!))
       || (['www.radiocontact.be', 'www.belrtl.be'].includes(hostname)
-        && ['player'].includes(pathParts[1]!)): {
+        && ['player', 'live'].includes(pathParts[1]!))
+      || hostname === 'mint.be' : {
       switch (true) {
         case hostname === 'www.rtlplay.be': {
           if (usePrivacyMode) {
@@ -249,7 +265,7 @@ presence.on('UpdateData', async () => {
               )?.textContent || ''
             }
             else {
-              presenceData.name = getChannel(pathParts[3]!).channel
+              presenceData.name = getChannel(pathParts[3]!).name
             }
 
             presenceData.type = getChannel(pathParts[3]!).type
@@ -262,7 +278,7 @@ presence.on('UpdateData', async () => {
               /* Songs played in the livestream are the same as the audio radio ones but with video clips
               Fetch the data from the Radioplayer API. It is used on the official radio contact and bel rtl websites */
               const response = await fetch(
-                getChannel(pathParts[3]!).radioplayerAPI!,
+                getChannel(pathParts[3]!).radioAPI!,
               )
               const dataString = await response.text()
               const media = JSON.parse(dataString)
@@ -270,7 +286,7 @@ presence.on('UpdateData', async () => {
               presenceData.largeImageKey = await getThumbnail(
                 media.results.now.imageUrl,
               )
-              presenceData.state = media.results.now.artistName ? `${media.results.now.name} - ${media.results.now.artistName}` : getChannel(pathParts[3]!).channel
+              presenceData.state = media.results.now.artistName ? `${media.results.now.name} - ${media.results.now.artistName}` : getChannel(pathParts[3]!).name
 
               if (usePresenceName && !useChannelName) {
                 const detail = media.results.now.programmeName || media.results.now.artistName
@@ -284,7 +300,7 @@ presence.on('UpdateData', async () => {
             }
             else {
               presenceData.largeImageKey = getChannel(pathParts[3]!).logo
-              presenceData.largeImageText = getChannel(pathParts[3]!).channel
+              presenceData.largeImageText = getChannel(pathParts[3]!).name
             }
 
             if (useTimestamps) {
@@ -353,7 +369,8 @@ presence.on('UpdateData', async () => {
           }
           break
         }
-        case ['www.radiocontact.be', 'www.belrtl.be'].includes(hostname): {
+        // Webradio websites
+        case ['www.radiocontact.be', 'www.belrtl.be', 'mint.be'].includes(hostname): {
           const webradio = pathParts[2] || hostname
           if (usePrivacyMode) {
             presenceData.details = strings.listeningMusic
@@ -364,7 +381,7 @@ presence.on('UpdateData', async () => {
             presenceData.smallImageText = strings.listeningMusic
           }
           else {
-            presenceData.name = getChannel(webradio).channel
+            presenceData.name = getChannel(webradio).name
             presenceData.type = getChannel(webradio).type
 
             if (exist('button[aria-label="stop"]')) {
@@ -376,65 +393,57 @@ presence.on('UpdateData', async () => {
               presenceData.smallImageText = strings.pause
             }
 
-            try {
-              // Fetch the data from the API
-              let data
+            // Fetch the data from the API using fetchCache
+            let data
 
-              if (!pathParts[2]) {
-                // Main radio use radioplayer api
-                const response = await fetch(getChannel(hostname).radioplayerAPI!)
-                const dataString = await response.text()
-                data = JSON.parse(dataString).results.now
-              }
-              else {
-                // Secondary webradio use in house api
-                const response = await fetch(getChannel(pathParts[2]).radioplayerAPI!)
-                const dataString = await response.text()
-                const playlistData = JSON.parse(dataString)
-
-                // Find the currently playing song by comparing timestamps
-                const now = Date.now() / 1000 // Current time in seconds
-                const currentSong = playlistData.find((song: any) => {
-                  const startTime = new Date(song.StartTime).getTime() / 1000
-                  const endTime = new Date(song.EndTime).getTime() / 1000
-                  return startTime <= now && now <= endTime
-                }) || playlistData[0] // Fallback to first song if none found
-
-                data = {
-                  name: currentSong.Title,
-                  artistName: currentSong.Artist,
-                  imageUrl: currentSong.Cover['200'],
-                  startTime: new Date(currentSong.StartTime).getTime() / 1000,
-                  stopTime: new Date(currentSong.EndTime).getTime() / 1000,
-                }
-              }
-
-              presenceData.details = data.name || strings.listeningMusic
-              presenceData.state = data.artistName || data.description || getChannel(webradio).channel
-
-              if (usePresenceName && !useChannelName) {
-                const detail = data.programmeName || data.artistName
-                presenceData.name = strings.on.replace('{0}', detail).replace('{1}', presenceData.name)
-              }
-
-              presenceData.startTimestamp = data.startTime || browsingTimestamp
-              presenceData.endTimestamp = data.stopTime
-                || delete presenceData.endTimestamp
-              presenceData.largeImageKey = await getThumbnail(
-                data.imageUrl,
-              )
-
-              presenceData.largeImageText = data.serviceDescription
-                ? limitText(
-                    `${getChannel(webradio).channel} - ${
-                      data.serviceDescription
-                    }`,
-                  )
-                : getChannel(webradio).channel
+            if (!pathParts[2]) {
+              // Main radio use radioplayer api
+              const apiData = await fetchCache(getChannel(hostname).radioAPI!) as any
+              data = apiData.results.now
             }
-            catch (error) {
-              presence.error(`Error fetching data from the API: ${error}`)
+            else {
+              // Secondary webradio use in house api
+              const playlistData = await fetchCache(getChannel(pathParts[2]).radioAPI!) as any[]
+
+              // Find the currently playing song by comparing timestamps
+              const now = Date.now() / 1000 // Current time in seconds
+              const currentSong = playlistData.find((song: any) => {
+                const startTime = new Date(song.StartTime).getTime() / 1000
+                const endTime = new Date(song.EndTime).getTime() / 1000
+                return startTime <= now && now <= endTime
+              }) || playlistData[0] // Fallback to first song if none found
+
+              data = {
+                name: currentSong.Title,
+                artistName: currentSong.Artist,
+                imageUrl: currentSong.Cover['200'],
+                startTime: new Date(currentSong.StartTime).getTime() / 1000,
+                stopTime: new Date(currentSong.EndTime).getTime() / 1000,
+              }
             }
+
+            presenceData.details = data.name || strings.listeningMusic
+            presenceData.state = data.artistName || data.description || getChannel(webradio).name
+
+            if (usePresenceName && !useChannelName) {
+              const detail = data.programmeName || data.artistName
+              presenceData.name = strings.on.replace('{0}', detail).replace('{1}', presenceData.name)
+            }
+
+            presenceData.startTimestamp = data.startTime || browsingTimestamp
+            presenceData.endTimestamp = data.stopTime
+              || delete presenceData.endTimestamp
+            presenceData.largeImageKey = await getThumbnail(
+              data.imageUrl,
+            )
+
+            presenceData.largeImageText = data.serviceDescription
+              ? limitText(
+                  `${getChannel(webradio).name} - ${
+                    data.serviceDescription
+                  }`,
+                )
+              : getChannel(webradio).name
 
             if (useButtons) {
               presenceData.buttons = [
@@ -597,6 +606,7 @@ presence.on('UpdateData', async () => {
             document
               .querySelector('meta[property="og:image"')!
               .getAttribute('content')!,
+            ActivityAssets.Animated,
             cropPreset.horizontal,
           )
           if (coverArt) {
@@ -606,6 +616,7 @@ presence.on('UpdateData', async () => {
             presenceDataPoster.largeImageKey = mediaName
             presenceDataPoster.largeImageKey = await getThumbnail(
               coverArt,
+              ActivityAssets.Animated,
               cropPreset.horizontal,
             )
 
@@ -613,6 +624,7 @@ presence.on('UpdateData', async () => {
             presenceDataLogo.largeImageText = 'RTLplay'
             presenceDataLogo.largeImageKey = await getThumbnail(
               ActivityAssets.Logo,
+              ActivityAssets.Animated,
               cropPreset.squared,
             )
 
@@ -639,7 +651,7 @@ presence.on('UpdateData', async () => {
     /* MEDIA PAGE (Page de media)
 
     (https://www.rtlplay.be/rtlplay/salvation~2ab30366-51fe-4b29-a720-5e41c9bd6991) */
-    case pathParts[2]!.length > 15: {
+    case (hostname === 'www.rtlplay.be' && pathParts[2]!.length > 15): {
       presenceData.startTimestamp = browsingTimestamp
 
       if (usePrivacyMode) {
@@ -697,10 +709,12 @@ presence.on('UpdateData', async () => {
 
           presenceData.largeImageKey = await getThumbnail(
             document.querySelector('img.detail__poster')?.getAttribute('src') ?? '',
+            ActivityAssets.Animated,
             cropPreset.vertical,
           )
           presenceDataSlide.largeImageKey = await getThumbnail(
             document.querySelector('img.detail__img')?.getAttribute('src') ?? '',
+            ActivityAssets.Animated,
             cropPreset.horizontal,
           )
 
@@ -710,12 +724,18 @@ presence.on('UpdateData', async () => {
       }
       break
     }
+    // TODO Support https://www.rtl.be/podcasts/
     default: {
+      presenceData.name = getChannel(hostname).name
+
       presenceData.details = strings.browsing
       presenceData.state = strings.viewAPage
 
       presenceData.smallImageKey = ActivityAssets.Binoculars
       presenceData.smallImageText = strings.browsing
+
+      presenceData.largeImageKey = getChannel(hostname).animated
+      presenceData.largeImageText = getChannel(hostname).name
 
       if (useTimestamps)
         presenceData.startTimestamp = browsingTimestamp

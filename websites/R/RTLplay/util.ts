@@ -135,7 +135,9 @@ export enum ActivityAssets {
   RTLDistrict = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/15.png',
   RTLSports = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/16.png',
   BelRTL = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/10.png',
+  BelRTLAnimated = 'https://i.imgur.com/i8OnZwd.gif',
   Contact = 'https://cdn.rcd.gg/PreMiD/websites/R/RTLplay/assets/11.png',
+  ContactAnimated = 'https://imgur.com/OhK2Y0p.gif',
   Mint = 'https://i.imgur.com/IzFAcAN.png',
 }
 
@@ -181,45 +183,54 @@ export function exist(selector: string): boolean {
 }
 
 interface ChannelInfo {
-  channel: string
+  name: string
   type: ActivityType
   logo: ActivityAssets
-  radioplayerAPI?: string // Optional property
+  animated?: ActivityAssets // Optional property
+  radioAPI?: string // Optional property
 }
 
 export function getChannel(channel: string): ChannelInfo {
   switch (true) {
+    case channel.includes('www.rtlplay.be'): {
+      return {
+        name: 'RTLplay',
+        type: ActivityType.Watching,
+        logo: ActivityAssets.RTLPlay,
+        animated: ActivityAssets.Animated,
+      }
+    }
     case channel.includes('tvi'): {
       return {
-        channel: 'RTL TVi',
+        name: 'RTL TVi',
         type: ActivityType.Watching,
         logo: ActivityAssets.RTLTVi,
       }
     }
     case channel.includes('club'): {
       return {
-        channel: 'RTL club',
+        name: 'RTL club',
         type: ActivityType.Watching,
         logo: ActivityAssets.RTLClub,
       }
     }
     case channel.includes('plug'): {
       return {
-        channel: 'RTL plug',
+        name: 'RTL plug',
         type: ActivityType.Watching,
         logo: ActivityAssets.RTLPlug,
       }
     }
     case ['rtlplay', 'district', 'RTLdistrict'].includes(channel): {
       return {
-        channel: 'RTL district',
+        name: 'RTL district',
         type: ActivityType.Watching,
         logo: ActivityAssets.RTLDistrict,
       }
     }
     case ['rtlplay2', 'sports', 'RTLsports'].includes(channel): {
       return {
-        channel: 'RTL sports',
+        name: 'RTL sports',
         type: ActivityType.Watching,
         logo: ActivityAssets.RTLSports,
       }
@@ -228,153 +239,170 @@ export function getChannel(channel: string): ChannelInfo {
     // [1/7] Main Radio
     case ['bel', 'www.belrtl.be'].includes(channel): {
       return {
-        channel: 'Bel RTL',
+        name: 'Bel RTL',
         type: ActivityType.Listening,
         logo: ActivityAssets.BelRTL,
-        radioplayerAPI: 'https://core-search.radioplayer.cloud/056/qp/v4/events/?rpId=6',
+        animated: ActivityAssets.BelRTLAnimated,
+        radioAPI: 'https://core-search.radioplayer.cloud/056/qp/v4/events/?rpId=6',
       }
     }
     // [2/7] bel RTL Musique
     case ['webradio1'].includes(channel): {
       return {
-        channel: 'bel RTL Musique',
+        name: 'bel RTL Musique',
         type: ActivityType.Listening,
         logo: ActivityAssets.BelRTL,
-        radioplayerAPI: 'https://www.belrtl.be/webradios/api/playlist/mooov_10',
+        animated: ActivityAssets.BelRTLAnimated,
+        radioAPI: 'https://www.belrtl.be/webradios/api/playlist/mooov_10',
       }
     }
     // [3/7] bel RTL Summer Station
     case ['webradio3'].includes(channel): {
       return {
-        channel: 'bel RTL Summer Station',
+        name: 'bel RTL Summer Station',
         type: ActivityType.Listening,
         logo: ActivityAssets.BelRTL,
-        radioplayerAPI: 'https://www.belrtl.be/webradios/api/playlist/mooov_11',
+        animated: ActivityAssets.BelRTLAnimated,
+        radioAPI: 'https://www.belrtl.be/webradios/api/playlist/mooov_11',
       }
     }
     // [4/7] bel RTL 90
     case ['webradio6'].includes(channel): {
       return {
-        channel: 'bel RTL 90',
+        name: 'bel RTL 90',
         type: ActivityType.Listening,
         logo: ActivityAssets.BelRTL,
-        radioplayerAPI: 'https://www.belrtl.be/webradios/api/playlist/mooov_14',
+        animated: ActivityAssets.BelRTLAnimated,
+        radioAPI: 'https://www.belrtl.be/webradios/api/playlist/mooov_14',
       }
     }
     // [5/7] bel RTL 80
     case ['webradio2'].includes(channel): {
       return {
-        channel: 'bel RTL 80',
+        name: 'bel RTL 80',
         type: ActivityType.Listening,
         logo: ActivityAssets.BelRTL,
-        radioplayerAPI: 'https://www.belrtl.be/webradios/api/playlist/mooov_12',
+        animated: ActivityAssets.BelRTLAnimated,
+        radioAPI: 'https://www.belrtl.be/webradios/api/playlist/mooov_12',
       }
     }
     // [6/7] bel RTL 80
     case ['webradio7'].includes(channel): {
       return {
-        channel: 'bel RTL chanson française',
+        name: 'bel RTL chanson française',
         type: ActivityType.Listening,
         logo: ActivityAssets.BelRTL,
-        radioplayerAPI: 'https://www.belrtl.be/webradios/api/playlist/mooov_16',
+        animated: ActivityAssets.BelRTLAnimated,
+        radioAPI: 'https://www.belrtl.be/webradios/api/playlist/mooov_16',
       }
     }
     // [7/7] bel RTL Comédie
     case ['webradio4'].includes(channel): {
       return {
-        channel: 'bel RTL Comédie',
+        name: 'bel RTL Comédie',
         type: ActivityType.Listening,
         logo: ActivityAssets.BelRTL,
-        radioplayerAPI: 'https://www.belrtl.be/webradios/api/playlist/mooov_15',
+        animated: ActivityAssets.BelRTLAnimated,
+        radioAPI: 'https://www.belrtl.be/webradios/api/playlist/mooov_15',
       }
     }
     // Radio Contact
     // [1/8] Main Radio
     case ['contact', 'www.radiocontact.be'].includes(channel): {
       return {
-        channel: 'Radio Contact',
+        name: 'Radio Contact',
         type: ActivityType.Listening,
         logo: ActivityAssets.Contact,
-        radioplayerAPI: 'https://core-search.radioplayer.cloud/056/qp/v4/events/?rpId=1',
+        animated: ActivityAssets.ContactAnimated,
+        radioAPI: 'https://core-search.radioplayer.cloud/056/qp/v4/events/?rpId=1',
       }
     }
     // [2/8] Contact - La playlist de Tonton
     case ['laplaylistdetonton'].includes(channel): {
       return {
-        channel: 'Contact La playlist de Tonton',
+        name: 'Contact La playlist de Tonton',
         type: ActivityType.Listening,
         logo: ActivityAssets.Contact,
-        radioplayerAPI: 'https://rtlmedias.rtl.be/webradios/api/playlist/mooov_5',
+        animated: ActivityAssets.ContactAnimated,
+        radioAPI: 'https://rtlmedias.rtl.be/webradios/api/playlist/mooov_5',
       }
     }
     // [3/8] Contact Summertime
     case ['plus'].includes(channel): {
       return {
-        channel: 'Contact Summertime',
+        name: 'Contact Summertime',
         type: ActivityType.Listening,
         logo: ActivityAssets.Contact,
-        radioplayerAPI: 'https://rtlmedias.rtl.be/webradios/api/playlist/mooov_6',
+        animated: ActivityAssets.ContactAnimated,
+        radioAPI: 'https://rtlmedias.rtl.be/webradios/api/playlist/mooov_6',
       }
     }
     // [4/8] Contact DJ's
     case ['mix'].includes(channel): {
       return {
-        channel: 'Contact DJ\'s',
+        name: 'Contact DJ\'s',
         type: ActivityType.Listening,
         logo: ActivityAssets.Contact,
-        radioplayerAPI: 'https://rtlmedias.rtl.be/webradios/api/playlist/mooov_4',
+        animated: ActivityAssets.ContactAnimated,
+        radioAPI: 'https://rtlmedias.rtl.be/webradios/api/playlist/mooov_4',
       }
     }
     // [5/8] Contact 2000
     case ['2000'].includes(channel): {
       return {
-        channel: 'Contact 2000',
+        name: 'Contact 2000',
         type: ActivityType.Listening,
         logo: ActivityAssets.Contact,
-        radioplayerAPI: 'https://rtlmedias.rtl.be/webradios/api/playlist/mooov_1',
+        animated: ActivityAssets.ContactAnimated,
+        radioAPI: 'https://rtlmedias.rtl.be/webradios/api/playlist/mooov_1',
       }
     }
     // [6/8] Contact 90's
     case ['contact90s'].includes(channel): {
       return {
-        channel: 'Contact 90\'s',
+        name: 'Contact 90\'s',
         type: ActivityType.Listening,
         logo: ActivityAssets.Contact,
-        radioplayerAPI: 'https://rtlmedias.rtl.be/webradios/api/playlist/mooov_2',
+        animated: ActivityAssets.ContactAnimated,
+        radioAPI: 'https://rtlmedias.rtl.be/webradios/api/playlist/mooov_2',
       }
     }
     // [7/8] Contact 80's
     case ['contact80s'].includes(channel): {
       return {
-        channel: 'Contact 80\'s',
+        name: 'Contact 80\'s',
         type: ActivityType.Listening,
         logo: ActivityAssets.Contact,
-        radioplayerAPI: 'https://rtlmedias.rtl.be/webradios/api/playlist/mooov_3',
+        animated: ActivityAssets.ContactAnimated,
+        radioAPI: 'https://rtlmedias.rtl.be/webradios/api/playlist/mooov_3',
       }
     }
     // [8/8] Contact kids
     case ['kids'].includes(channel): {
       return {
-        channel: 'Contact kids',
+        name: 'Contact kids',
         type: ActivityType.Listening,
         logo: ActivityAssets.Contact,
-        radioplayerAPI: 'https://rtlmedias.rtl.be/webradios/api/playlist/mooov_8',
+        animated: ActivityAssets.ContactAnimated,
+        radioAPI: 'https://rtlmedias.rtl.be/webradios/api/playlist/mooov_8',
       }
     }
     // Mint Radio
-    case ['www.mint.be'].includes(channel): {
+    case ['mint.be', 'www.mint.be'].includes(channel): {
       return {
-        channel: 'Mint',
+        name: 'Mint',
         type: ActivityType.Listening,
         logo: ActivityAssets.Mint,
-        radioplayerAPI: 'https://core-search.radioplayer.cloud/056/qp/v4/events/?rpId=7',
+        animated: ActivityAssets.Mint,
+        radioAPI: 'https://core-search.radioplayer.cloud/056/qp/v4/events/?rpId=7',
       }
     }
     default: {
       return {
-        channel,
+        name: 'RTLplay',
         type: ActivityType.Watching,
         logo: ActivityAssets.RTLPlay,
+        animated: ActivityAssets.Animated,
       }
     }
   }
@@ -391,6 +419,7 @@ export const cropPreset = {
 
 export async function getThumbnail(
   src: string = ActivityAssets.Logo,
+  placeholder: string = ActivityAssets.Animated,
   cropPercentages: typeof cropPreset.squared = cropPreset.squared,
   progress = 2,
   borderWidth = 15,
@@ -495,7 +524,41 @@ export async function getThumbnail(
     }
 
     img.onerror = function () {
-      resolve(src)
+      resolve(src || placeholder)
     }
   })
+}
+
+// Fetch a resource and cache it locally (in memory)
+interface CacheEntry {
+  data: unknown
+  timestamp: number
+}
+const cacheStore: Record<string, CacheEntry> = {}
+const validityTime: number = 5000 // 5 seconds
+
+export async function fetchCache(url: string, options?: RequestInit): Promise<unknown> {
+  const now = Date.now()
+  const cacheEntry = cacheStore[url]
+  // If the resource is cached and less than, return the cached data
+  if (cacheEntry && now - cacheEntry.timestamp < validityTime) {
+    return cacheEntry.data
+  }
+  // Otherwise, fetch the resource
+  const response = await fetch(url, options)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch: ${url}`)
+  }
+  // Try to parse as JSON, otherwise return raw text
+  let data: unknown
+  const contentType = response.headers.get('content-type') || ''
+  if (contentType.includes('application/json')) {
+    data = await response.json()
+  }
+  else {
+    data = await response.text()
+  }
+  // Cache with timestamp and return the data
+  cacheStore[url] = { data, timestamp: now }
+  return data
 }
