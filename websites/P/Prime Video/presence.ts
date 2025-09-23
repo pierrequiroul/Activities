@@ -27,7 +27,8 @@ presence.on('UpdateData', async () => {
   if (title || title2) {
     let video = document.querySelector<HTMLVideoElement>(
       '.scalingVideoContainer > div.scalingVideoContainerBottom > div > video',
-    )
+    ) || document.querySelector<HTMLVideoElement>('div > video')
+
     if (video === null || Number.isNaN(video.duration))
       video = document.querySelector('video')
 
@@ -137,6 +138,9 @@ presence.on('UpdateData', async () => {
       ?.split(/["„]/)[1]
       ?.split(/[”"]/) ?? []
     presenceData.smallImageKey = Assets.Search
+  }
+  else {
+    presenceData.details = 'Browsing a page'
   }
   if (presenceData.details)
     presence.setActivity(presenceData)
