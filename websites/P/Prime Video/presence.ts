@@ -27,7 +27,7 @@ presence.on('UpdateData', async () => {
   if (title || title2) {
     let video = document.querySelector<HTMLVideoElement>(
       '.scalingVideoContainer > div.scalingVideoContainerBottom > div > video',
-    ) || document.querySelector<HTMLVideoElement>('div > video')
+    ) || document.querySelector<HTMLVideoElement>('#dv-web-player video')
 
     if (video === null || Number.isNaN(video.duration))
       video = document.querySelector('video')
