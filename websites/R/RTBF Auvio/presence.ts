@@ -33,7 +33,7 @@ presence.on('UpdateData', async () => {
     largeImageKey: ActivityAssets.Auvio,
     largeImageText: 'RTBF Auvio',
     smallImageKey: ActivityAssets.Binoculars,
-    smallImageText: strings.browsing,
+    smallImageText: '',
     type: ActivityType.Watching,
   }
   const [
@@ -55,6 +55,7 @@ presence.on('UpdateData', async () => {
   // Update strings if user selected another language.
   if (!checkStringLanguage(newLang))
     return
+  presenceData.smallImageText = strings.browsing
 
   if (oldPath !== pathname) {
     oldPath = pathname
@@ -65,7 +66,9 @@ presence.on('UpdateData', async () => {
   let useSlideshow = false
 
   switch (true) {
-    case exist('#audioPlayerContainer') && document.querySelector('#PlayerUIAudioPlayPauseButton')?.getAttribute('aria-label') === 'pause': {
+    case exist('#audioPlayerContainer')
+      && (exist('#PlayerUIButtonStop')
+        || document.querySelector('#PlayerUIButtonPlayPause')?.getAttribute('aria-label') === 'pause'): {
       if (!audioPlayer) {
         slideshow.deleteAllSlides() // Clearing previous slides
         audioPlayer = true
@@ -450,7 +453,7 @@ presence.on('UpdateData', async () => {
           title = document.querySelector('h1[class*=TitleDetails_title]')?.textContent ?? title
           subtitle = document.querySelector('[class*=TitleDetails_subtitle]')?.textContent ?? subtitle
 
-          const videoArray = document.querySelectorAll('div.redbee-player-media-container > video')
+          const videoArray = document.querySelectorAll('div.playerWrapper > video')
           const video = videoArray[videoArray.length - 1] as HTMLVideoElement
           const bAdCountdown = exist('.sas-ctrl-countdown.sas-enable')
 
@@ -473,7 +476,7 @@ presence.on('UpdateData', async () => {
           }
 
           // LIVE MEDIA PLAYER
-          const liveDelay = (Math.abs(Math.floor(new Date().getTime() / 1000 - video.currentTime)))
+          const liveDelay = video ? (Math.abs(Math.floor(new Date().getTime() / 1000 - video.currentTime))) : 0
           if (mediaType === 'LIVE'
             || (liveDelay < 3600) // Sometimes lives don't follow established codes
           ) {

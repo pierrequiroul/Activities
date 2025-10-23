@@ -1,4 +1,8 @@
 {
+  "RTBFAuvio.ad": {
+    "description": "Used when a commercial is being played, most of the time before playing a media",
+    "message": "Currently watching an ad"
+  },
   "RTBFAuvio.aPodcast": {
     "description": "Used with general string \"Listening to\" to form \"Listening to a Podcast\" in privacy mode",
     "message": "a Podcast"
