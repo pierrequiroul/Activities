@@ -670,7 +670,6 @@ presence.on('UpdateData', async () => {
           tags = tags.filter((e) => {
             return e
           })
-          console.warn(tags)
         }
         else {
           mediaName = document.querySelector('h1[class*="detail"][class*="__title"]')?.textContent || 'Unknown Media'
