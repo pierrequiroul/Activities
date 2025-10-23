@@ -14,5 +14,9 @@
   "RTLplay.tvshow": {
     "description": "Category of media",
     "message": "TV Serie"
+  },
+  "RTLplay.viewlist": {
+    "description": "List as in their saved series/movies.",
+    "message": "Viewing their list"
   }
 }
