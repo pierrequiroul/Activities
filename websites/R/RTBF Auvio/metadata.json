@@ -72,7 +72,7 @@
       },
       "title": "Show Live Channel as Presence",
       "icon": "fad fa-signal-stream",
-      "value": true
+      "value": false
     },
     {
       "id": "usePoster",
