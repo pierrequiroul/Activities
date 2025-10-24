@@ -27,16 +27,15 @@ export const stringMap = {
   season: 'general.season',
   episode: 'general.episode',
 
-  watchingAd: 'RTBFAuvio.ad',
-  deferred: 'RTBFAuvio.deferred',
-  privacy: 'RTBFAuvio.privatePlay',
-  on: 'RTBFAuvio.on',
-  watchingLiveMusic: 'RTLplay.LiveMusic',
+  deferred: 'RTLplay.deferred',
   movie: 'RTLplay.movie',
+  on: 'RTLplay.on',
+  privacy: 'RTBLplay.privatePlay',
   tvshow: 'RTLplay.tvshow',
   viewList: 'RTLplay.viewList',
-  watchingAProgramOrSeries: 'RTLplay.AProgramOrSeries',
-
+  watchingAd: 'RTLplay.watchingAd',
+  watchingAProgramOrSeries: 'RTLplay.watchingAProgramOrSeries',
+  watchingLiveMusic: 'RTLplay.watchingLiveMusic',
 }
 
 // eslint-disable-next-line import/no-mutable-exports

@@ -526,17 +526,18 @@ presence.on('UpdateData', async () => {
           presenceData.details = episodeName ?? mediaName // EpisodeName
           if (episodeName)
             presenceData.state = `${strings.season} ${seasonNumber}, ${strings.episode} ${episodeNumber}` // Season 0, Episode 0
+          if (seasonNumber && episodeNumber) {
+            // MediaName on RTLplay
+            presenceData.largeImageText = strings.on.replace('{0}', mediaName).replace('{1}', 'RTLplay')
+          }
         }
         else {
           presenceData.details = mediaName // MediaName
           if (episodeName)
-            presenceData.state = `S${seasonNumber} E${episodeNumber} - ${episodeName}` // S0 - E0 - EpisodeName
-        }
-        if (seasonNumber && episodeNumber) {
-          // MediaName - Season 0 - Episode 0
-          presenceData.largeImageText = ` - ${strings.season} ${seasonNumber} - ${strings.episode} ${episodeNumber}`
-          presenceData.largeImageText = limitText(mediaName, 128 - presenceData.largeImageText.length)
-            + presenceData.largeImageText
+            presenceData.state = episodeName // EpisodeName
+          if (seasonNumber && episodeNumber) {
+            presenceData.largeImageText = `Season ${seasonNumber}, Episode ${episodeNumber}`
+          }
         }
 
         // Progress Bar / Timestamps
@@ -610,8 +611,6 @@ presence.on('UpdateData', async () => {
             cropPreset.horizontal,
           )
           if (coverArt) {
-            presenceData.largeImageText = `${strings.season} ${seasonNumber}, ${strings.episode} ${episodeNumber}`
-
             const presenceDataPoster = structuredClone(presenceData)
             presenceDataPoster.largeImageKey = mediaName
             presenceDataPoster.largeImageKey = await getThumbnail(
