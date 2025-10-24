@@ -74,8 +74,7 @@ function fetchStrings() {
       presence.info(`Fetched strings for ${targetLang}.`)
     })
     .catch((err) => {
-      // Ensure we always reset state and clear timeout on failure so subsequent
-      // attempts can run and we don't remain stuck in a fetching state.
+      // Ensure we always reset state and clear timeout on failure so subsequent attempts can run.
       if (stringFetchTimeout) {
         clearTimeout(stringFetchTimeout)
         stringFetchTimeout = null
@@ -91,13 +90,8 @@ fetchStrings()
 // Sets the current language to fetch strings for and returns whether any strings are loaded.
 export function checkStringLanguage(lang: string): boolean {
   currentTargetLang = lang
-  // Trigger an immediate fetch when the language changes so callers don't
-  // have to wait for the interval. fetchStrings will noop if a fetch is
-  // already in progress or if strings are already loaded for this lang.
+  // Trigger an immediate fetch when the language changes so callers don't have to wait for the interval.
   fetchStrings()
-  // Only return true when we already have strings loaded for the requested
-  // language. If strings exist but are for a different language, return
-  // false so callers wait for the correct localized strings to be fetched.
   return !!strings && oldLang === lang
 }
 
