@@ -195,6 +195,54 @@ export function exist(selector: string): boolean {
   return document.querySelector(selector) !== null
 }
 
+export function getDomText(selector: string, fallback = ''): string {
+  const element = document.querySelector(selector)
+  const value = element?.textContent?.trim() ?? fallback
+
+  if (element === null && fallback !== '') {
+    presence.info(`[getDomText] fallback used for selector "${selector}" -> "${fallback}"`)
+  }
+
+  return value
+}
+
+export function getDomAttribute(selector: string, attribute: string, fallback = ''): string {
+  return document.querySelector(selector)?.getAttribute(attribute)?.trim() ?? fallback
+}
+
+export async function safeGetThumbnail(url: string, preset: unknown, color: string | number[][] | undefined): Promise<string> {
+  try {
+    const resolvedColor = typeof color === 'string' ? color : '#ffcc00'
+    return await getThumbnail(url, preset as never, resolvedColor)
+  }
+  catch (error) {
+    console.warn(`[safeGetThumbnail] fallback used for "${url}"`, error)
+    return ActivityAssets.Logo
+  }
+}
+
+export async function safeFetchMetadata(url: string): Promise<any> {
+  try {
+    const response = await fetch(url)
+    if (!response?.ok) {
+      console.warn(`[safeFetchMetadata] fallback used for "${url}" (status ${response?.status ?? 'unknown'})`)
+      return null
+    }
+
+    const dataString = await response.text()
+    if (!dataString) {
+      console.warn(`[safeFetchMetadata] fallback used for "${url}" (empty response body)`)
+      return null
+    }
+
+    return JSON.parse(dataString)
+  }
+  catch (error) {
+    console.warn(`[safeFetchMetadata] fallback used for "${url}"`, error)
+    return null
+  }
+}
+
 // Mainly used to truncate largeImageKeyText because the limit is 128 characters
 export function limitText(input: string, maxLength = 128): string {
   const ellipsis = ' ...'

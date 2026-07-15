@@ -7,11 +7,15 @@ import {
   formatDuration,
   getChannel,
   getColor,
+  getDomAttribute,
+  getDomText,
   getLocalizedAssets,
   getSetting,
   getThumbnail,
   limitText,
   presence,
+  safeFetchMetadata,
+  safeGetThumbnail,
   strings,
 } from './util.js'
 
@@ -24,6 +28,43 @@ let isMediaPlayer = false
 let audioPlayer = false
 let title = ''
 let subtitle = ''
+
+function normalizeTitle(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replaceAll(/[\u0300-\u036F]/g, '')
+    .replaceAll(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function getPreferredTitle(baseTitle: string, baseSubtitle: string, useOnlyLastBreadcrumb = false) {
+  const detailSubtitle = getDomText('[class*=DetailsTitle_subtitle]', '')
+  const playerSubtitle = getDomText('[class*=TitleDetails_subtitle]', '')
+  const preferredSubtitle = baseSubtitle || detailSubtitle || playerSubtitle
+
+  if (!baseTitle || !preferredSubtitle)
+    return baseTitle
+
+  const lastBreadcrumbTitle = getDomText('[aria-current="page"], [class*=Breadcrumb_breadcrumb] > ul > li:last-child > span', '')
+  const detailTitle = getDomText('div[class*=DetailsTitle_title] > h1', '').replace(detailSubtitle, '')
+  const playerTitle = getDomText('h1[class*=TitleDetails_title]', '')
+
+  if (useOnlyLastBreadcrumb) {
+    return [detailTitle, playerTitle, baseTitle].some(currentTitle => normalizeTitle(currentTitle) === normalizeTitle(lastBreadcrumbTitle))
+      ? preferredSubtitle
+      : baseTitle
+  }
+
+  return [detailTitle, playerTitle, lastBreadcrumbTitle].some(currentTitle => normalizeTitle(currentTitle) === normalizeTitle(baseTitle))
+    ? preferredSubtitle
+    : baseTitle
+}
+
+function clearTimestamps(data: PresenceData) {
+  delete data.startTimestamp
+  delete data.endTimestamp
+}
 
 presence.on('UpdateData', async () => {
   const { href, pathname } = document.location
@@ -202,8 +243,8 @@ presence.on('UpdateData', async () => {
       const searchQuery = (
         document.querySelector(
           'input[class*=PageContent_inputSearch]',
-        ) as HTMLInputElement
-      ).value
+        ) as HTMLInputElement | null
+      )?.value ?? ''
 
       if (!usePrivacyMode && searchQuery !== '') {
         presenceData.details = strings.browsing
@@ -229,13 +270,13 @@ presence.on('UpdateData', async () => {
       'langues_sous_titres',
       'parametres_lecture',
     ].includes(pathParts[1]!): {
-      presenceData.details = usePrivacyMode ? strings.browsing : document.querySelector('h1[class*=UserGateway_title]')!.textContent
+      presenceData.details = usePrivacyMode ? strings.browsing : getDomText('h1[class*=UserGateway_title]', strings.browsing)
       presenceData.state = usePrivacyMode ? strings.viewAPage : strings.viewAccount
 
-      const name = document.querySelector('[class*=HeaderUser_text]')?.textContent ?? ''
-      presenceData.smallImageKey = usePrivacyMode || name!.toLowerCase().includes('se connecter')
+      const name = getDomText('[class*=HeaderUser_text]', '')
+      presenceData.smallImageKey = usePrivacyMode || name.toLowerCase().includes('se connecter')
         ? ActivityAssets.Binoculars
-        : document.querySelector('[class*=HeaderUser_avatar] > span > img')!.getAttribute('src')
+        : getDomAttribute('[class*=HeaderUser_avatar] > span > img', 'src', ActivityAssets.Binoculars)
       presenceData.smallImageText = usePrivacyMode
         ? strings.browsing
         : name
@@ -248,11 +289,31 @@ presence.on('UpdateData', async () => {
       EXAMPLES: https://auvio.rtbf.be/live/on-nest-pas-des-pigeons-601928
                 https://auvio.rtbf.be/media/everything-everywhere-all-at-once-film-aux-7-oscars-en-2023-3284136 */
 
+      const hasTrailerPlayer = exist('#ui-trailer-1')
+        || exist('div[class*=WidgetMediaTrailer_trailerVideo]')
+        || exist('div[class*=WidgetMediaTrailer_bottomBar]')
+      const hasPlayerControls = exist('#PlayerUIButtonPlayPause')
+        && (
+          exist('[class*=PlayerUI_BottomContainer]')
+          || exist('[class*=PlayerUI_bottomControls]')
+          || exist('[class*=PlayerUI_bottomTimebar]')
+        )
+      const hasPlayerDialog = exist('[role="dialog"][aria-label="Player"]')
+        || exist('[class*=PlayerDialog_playerOverlay]')
+        || exist('#livePlayerContainer')
+        || exist('#vodPlayerContainer')
+      const hasVideoPlayer = hasPlayerDialog
+        && (
+          exist('div#vodPlayerContainer video')
+          || exist('div#livePlayerContainer video')
+          || (!hasTrailerPlayer && hasPlayerControls)
+        )
+
       if (usePrivacyMode) {
         presenceData.smallImageKey = ActivityAssets.Privacy
         presenceData.smallImageText = strings.privacy
 
-        if (!exist('#player')) {
+        if (!hasVideoPlayer) {
           presenceData.details = strings.browsing
           presenceData.state = strings.viewAPage
         }
@@ -277,19 +338,18 @@ presence.on('UpdateData', async () => {
       else {
         useSlideshow = true
 
-        // Fetch RTBF API
-        const response = await fetch(`https://bff-service.rtbf.be/auvio/v1.23/pages/${pathParts[1]!}/${pathParts[2]!}`)
-        const dataString = await response?.text()
-        const metadatas = JSON.parse(dataString)
+        const metadatas = await safeFetchMetadata(`https://bff-service.rtbf.be/auvio/v1.23/pages/${pathParts[1]!}/${pathParts[2]!}`)
 
         let mediaType, mediaSubtype, description, image, channel, duration, category, scheduledFrom, scheduledTo, waitTime, remainingTime
-        if (response) {
+        let shouldUsePreferredTitle = true
+        if (metadatas?.data) {
           // Populating metadatas variables with API method
 
           mediaType = metadatas.data.pageType
             ?? metadatas.data.content?.pageType
             ?? ''
           mediaSubtype = metadatas.data.content.type ?? ''
+          shouldUsePreferredTitle = !['MOVIE', 'SERIE'].includes(mediaSubtype)
 
           title = metadatas.data.content?.title ?? 'Auvio'
           subtitle = metadatas.data.content?.subtitle
@@ -324,6 +384,8 @@ presence.on('UpdateData', async () => {
               : ''
 
           category = metadatas.data.content?.category?.label ?? ''
+          if (['film', 'films'].includes(normalizeTitle(category)))
+            shouldUsePreferredTitle = false
 
           scheduledFrom = metadatas.data.content?.scheduledFrom ?? new Date(browsingTimestamp).toISOString()
           scheduledTo = metadatas.data.content?.scheduledTo ?? new Date(browsingTimestamp + 6000).toISOString()
@@ -350,26 +412,33 @@ presence.on('UpdateData', async () => {
             const data = JSON.parse(
               document.querySelectorAll('script[type=\'application/ld+json\']')[i]?.textContent ?? '{}',
             )
-            if (['Movie', 'Episode', 'BroadcastEvent', 'VideoObject'].includes(data['@type']))
+            if (['Movie', 'Episode', 'BroadcastEvent', 'VideoObject'].includes(data['@type'])) {
               mediaData = data
+              shouldUsePreferredTitle = !['Episode', 'Movie'].includes(data['@type'])
+            }
           }
 
           mediaType = pathParts[1]
 
-          subtitle = document.querySelector('[class*=DetailsTitle_subtitle]')?.textContent || ''
-          title = document.querySelector('div[class*=DetailsTitle_title] > h1')?.textContent?.replace(subtitle, '') ?? 'Auvio'
+          subtitle = getDomText('[class*=DetailsTitle_subtitle]', '')
+          title = getDomText('div[class*=DetailsTitle_title] > h1', 'Auvio').replace(subtitle, '') || 'Auvio'
           description = mediaData?.description && mediaData.description.length > 2 ? limitText(mediaData.description, 128) : 'Auvio'
           image = mediaData?.thumbnailUrl || ActivityAssets.Logo
-          channel = document.querySelectorAll('div[class*=DetailsTitle_channelCategory] > div')[0]?.textContent ?? ''
+          channel = document.querySelectorAll('div[class*=DetailsTitle_channelCategory] > div')[0]?.textContent?.trim() ?? ''
           duration = formatDuration(mediaData?.duration ?? 0)
-          category = document.querySelector('[class*=Breadcrumb_breadcrumb] > ul > li:last-child > span')?.textContent || ''
+          category = getDomText('[class*=Breadcrumb_breadcrumb] > ul > li:last-child > span', '')
 
           scheduledFrom = ''
           scheduledTo = ''
           waitTime = 0
           remainingTime = 0
         }
-        if (!exist('#player')) {
+
+        const isSportContent = normalizeTitle(category ?? '') === 'sport'
+          || exist('a[href*="/categorie/sport-"]')
+        if (shouldUsePreferredTitle)
+          title = getPreferredTitle(title, subtitle, isSportContent)
+        if (!hasVideoPlayer) {
           // NOTE: MEDIA PAGE
           isMediaPage = true
           if (isMediaPlayer) {
@@ -382,14 +451,14 @@ presence.on('UpdateData', async () => {
 
           presenceData.largeImageText = description
           if (usePoster) {
-            presenceData.largeImageKey = await getThumbnail(
+            presenceData.largeImageKey = await safeGetThumbnail(
               image,
               cropPreset.horizontal,
-              getColor(channel),
+              getColor(channel || 'Auvio'),
             )
           }
           else {
-            presenceData.largeImageKey = getChannel(channel).logo // Default logo if not found
+            presenceData.largeImageKey = getChannel(channel || 'Auvio').logo // Default logo if not found
           }
 
           if (useButtons) {
@@ -413,10 +482,16 @@ presence.on('UpdateData', async () => {
             slideshow.addSlide('01', subtitleData, 5000)
           }
 
+          if (category) {
+            const categoryData = structuredClone(presenceData)
+            categoryData.state = category
+            slideshow.addSlide('02', categoryData, 5000)
+          }
+
           if (description) {
             const descriptionData = structuredClone(presenceData)
             descriptionData.state = description
-            slideshow.addSlide('02', descriptionData, 5000)
+            slideshow.addSlide('03', descriptionData, 5000)
           }
 
           // SLIDE: Infos
@@ -425,7 +500,7 @@ presence.on('UpdateData', async () => {
             infosData.state = [channel, duration, category].filter(Boolean).join(' - ') // "La Une - 51min - Policier"
             if (channel && getChannel(channel).found)
               infosData.largeImageKey = getChannel(channel).logo
-            slideshow.addSlide('03', infosData, 5000)
+            slideshow.addSlide('04', infosData, 5000)
           }
 
           // SLIDE: Livestream Status
@@ -456,8 +531,8 @@ presence.on('UpdateData', async () => {
           }
 
           // Update the variables only if the overlay is visible and the elements are found
-          title = document.querySelector('h1[class*=TitleDetails_title]')?.textContent ?? title
-          subtitle = document.querySelector('[class*=TitleDetails_subtitle]')?.textContent ?? subtitle
+          title = getDomText('h1[class*=TitleDetails_title]', title)
+          subtitle = getDomText('[class*=TitleDetails_subtitle]', subtitle)
 
           // Try to extract season from the title (e.g. "Show Name S01" or "Show Name S1")
           let seasonNumber, episodeNumber, episodeName
@@ -480,9 +555,24 @@ presence.on('UpdateData', async () => {
               episodeName = episodeMatch.groups.episodeName.trim()
           }
 
-          const videoArray = document.querySelectorAll('div.playerWrapper > video')
-          const video = videoArray[videoArray.length - 1] as HTMLVideoElement
-          const bAdCountdown = exist('.sas-ctrl-countdown.sas-enable')
+          if (shouldUsePreferredTitle)
+            title = getPreferredTitle(title, subtitle, isSportContent)
+
+          const videoArray = document.querySelectorAll<HTMLVideoElement>('div#vodPlayerContainer video, div#livePlayerContainer video')
+          const video = videoArray[videoArray.length - 1] ?? null
+          const playPauseButton = document.querySelector<HTMLButtonElement>('#PlayerUIButtonPlayPause')
+          const playPauseLabel = playPauseButton?.getAttribute('aria-label')?.toLowerCase() ?? ''
+          const hasAdOverlay = exist('.ad-click-overlay')
+            || exist('.ad-children-wrapper')
+            || exist('#ad')
+            || exist('.PlayerAdUI_clickInfo__Hb5uc')
+          const bAdCountdown = hasAdOverlay || exist('.PlayerAdUI_clickInfo__Hb5uc')
+          const playerPausedLabel = playPauseLabel.includes('pause')
+            ? false
+            : playPauseLabel.includes('lecture') || playPauseLabel.includes('play')
+              ? true
+              : null
+          const isPaused = playerPausedLabel ?? video?.paused ?? false
 
           // BASE SLIDES
           if (usePresenceName)
@@ -492,10 +582,10 @@ presence.on('UpdateData', async () => {
 
           presenceData.largeImageText = episodeNumber && seasonNumber ? `Season ${seasonNumber}, Episode ${episodeNumber}` : description
           if (usePoster) {
-            presenceData.largeImageKey = await getThumbnail(
+            presenceData.largeImageKey = await safeGetThumbnail(
               image,
               cropPreset.horizontal,
-              getColor(channel),
+              getColor(channel || 'Auvio'),
             )
           }
           else {
@@ -503,10 +593,10 @@ presence.on('UpdateData', async () => {
           }
 
           // LIVE MEDIA PLAYER
-          const liveDelay = video ? (Math.abs(Math.floor(Date.now() / 1000 - video.currentTime))) : 0
-          if (mediaType === 'LIVE'
-            || (liveDelay < 3600) // Sometimes lives don't follow established codes
-          ) {
+          const liveDelay = video ? Math.abs(Math.floor(Date.now() / 1000 - video.currentTime)) : Number.POSITIVE_INFINITY
+          const isLiveMediaPlayer = mediaType === 'LIVE'
+            || (video !== null && liveDelay < 3600) // Sometimes lives don't follow established codes
+          if (isLiveMediaPlayer) {
             if (usePresenceName && useChannelName && channel !== '')
               presenceData.name = channel
 
@@ -523,25 +613,29 @@ presence.on('UpdateData', async () => {
               presenceData.smallImageKey = getLocalizedAssets(newLang, 'Ad')
               presenceData.smallImageText = strings.ad
 
-              presenceData.startTimestamp = browsingTimestamp
-              delete presenceData.endTimestamp
+              clearTimestamps(presenceData)
             }
             else if (liveDelay < 60) { // Live
-              presenceData.smallImageKey = video.paused
+              presenceData.smallImageKey = isPaused
                 ? Assets.Pause
                 : ActivityAssets.LiveAnimated
-              presenceData.smallImageText = video.paused
+              presenceData.smallImageText = isPaused
                 ? strings.pause
                 : strings.live
 
-              presenceData.startTimestamp = (new Date(scheduledFrom).getTime() / 1000)
-              presenceData.endTimestamp = (new Date(scheduledTo).getTime() / 1000)
+              if (isPaused) {
+                clearTimestamps(presenceData)
+              }
+              else {
+                presenceData.startTimestamp = (new Date(scheduledFrom).getTime() / 1000)
+                presenceData.endTimestamp = (new Date(scheduledTo).getTime() / 1000)
+              }
             }
             else { // Deferred
-              presenceData.smallImageKey = video.paused
+              presenceData.smallImageKey = isPaused
                 ? Assets.Pause
                 : ActivityAssets.DeferredAnimated
-              presenceData.smallImageText = video.paused
+              presenceData.smallImageText = isPaused
                 ? strings.pause
                 : strings.deferred
             }
@@ -584,22 +678,25 @@ presence.on('UpdateData', async () => {
               presenceData.smallImageKey = getLocalizedAssets(newLang, 'Ad')
               presenceData.smallImageText = strings.ad
 
-              presenceData.startTimestamp = browsingTimestamp
-              delete presenceData.endTimestamp
+              clearTimestamps(presenceData)
             }
-            else if (video.paused) {
+            else if (isPaused) {
               presenceData.smallImageKey = Assets.Pause
               presenceData.smallImageText = strings.pause
 
-              presenceData.startTimestamp = browsingTimestamp
-              delete presenceData.endTimestamp
+              clearTimestamps(presenceData)
             }
-            else {
+            else if (video) {
               presenceData.smallImageKey = Assets.Play
               presenceData.smallImageText = strings.play
 
               presenceData.startTimestamp = getTimestampsFromMedia(video)[0]
               presenceData.endTimestamp = getTimestampsFromMedia(video)[1]
+            }
+            else {
+              presenceData.smallImageKey = Assets.Play
+              presenceData.smallImageText = strings.play
+              clearTimestamps(presenceData)
             }
           }
 
@@ -610,13 +707,19 @@ presence.on('UpdateData', async () => {
             slideshow.addSlide('01', subtitleData, 5000)
           }
 
+          if (category) {
+            const categoryData = structuredClone(presenceData)
+            categoryData.state = category
+            slideshow.addSlide('02', categoryData, 5000)
+          }
+
           // SLIDE: Infos
           if (channel || duration || category) {
             const infosData = structuredClone(presenceData)
             infosData.state = [channel, duration, category].filter(Boolean).join(' - ') // "La Une - 51min - Policier"
             if (channel && getChannel(channel).found)
               infosData.largeImageKey = getChannel(channel).logo
-            slideshow.addSlide('02', infosData, 5000)
+            slideshow.addSlide('04', infosData, 5000)
           }
         }
       }
@@ -654,19 +757,21 @@ presence.on('UpdateData', async () => {
       }
       else {
         // ANCHOR: CATEGORY AND CHANNEL PAGE
-        const categoryTitle = document.querySelector('h1')!.textContent!.length < 20 // Sometimes the title is way too long
-          ? document.querySelector('h1')!.textContent!
-          : document.querySelector('nav[aria-label="Fil d\'ariane"] > ul > li:nth-last-child(1) > span')!.textContent! // Last of breadcrumb list
+        const headingTitle = getDomText('h1', '')
+        const breadcrumbTitle = getDomText('nav[aria-label="Fil d\'ariane"] > ul > li:nth-last-child(1) > span', '')
+        const categoryTitle = headingTitle.length < 20 && headingTitle
+          ? headingTitle
+          : breadcrumbTitle || headingTitle || 'Auvio' // Last of breadcrumb list
 
         presenceData.details = pathParts[1] === 'podcasts' ? `${categoryTitle} & Radios` : categoryTitle
 
         presenceData.state = strings.viewCategory.replace(':', '')
 
         // Fallback
-        presenceData.largeImageKey = await getThumbnail(
+        presenceData.largeImageKey = await safeGetThumbnail(
           getChannel(pathParts[1]!).logo,
           cropPreset.squared,
-          getColor(categoryTitle),
+          getColor(categoryTitle || 'Auvio'),
         )
         presenceData.largeImageText = `Catégorie ${categoryTitle} sur Auvio`
 
@@ -706,12 +811,12 @@ presence.on('UpdateData', async () => {
               const sampleData = structuredClone(presenceData) // Deep copy
               const mediaTitle = document.querySelectorAll(selector)[index]?.getAttribute('title') || index.toString()
 
-              sampleData.largeImageKey = await getThumbnail(
+              sampleData.largeImageKey = await safeGetThumbnail(
                 src,
                 exist('img[class*=TileProgramPoster_hoverPicture]')
                   ? cropPreset.vertical
                   : cropPreset.horizontal,
-                getColor(categoryTitle),
+                getColor(categoryTitle || 'Auvio'),
               )
               if (mediaTitle !== index.toString()) {
                 const sample = strings.on.replace('{1}', pathParts[1]!.includes('chaine') ? categoryTitle : 'Auvio')
